@@ -1,27 +1,28 @@
+import { Fraunces, Space_Grotesk, Space_Mono } from 'next/font/google';
 import '@/styles/globals.css';
 
-export const metadata = {
-  title: 'Pranav Arora — Senior ML Engineer',
-  description: 'Senior ML Engineer specialising in production AI systems, LLMs, and reinforcement learning. Based in Singapore.',
-  openGraph: {
-    title: 'Pranav Arora — Senior ML Engineer',
-    description: 'Production AI · LLMs · Reinforcement Learning',
-    url: 'https://pranavarora.vercel.app',
+const fraunces = Fraunces({
+  subsets: ['latin'],
+  axes: ['SOFT', 'WONK', 'opsz'],
+  variable: '--font-fraunces',
+});
+const grotesk = Space_Grotesk({ subsets: ['latin'], variable: '--font-grotesk' });
+const mono = Space_Mono({ subsets: ['latin'], weight: ['400', '700'], variable: '--font-space-mono' });
 
-  },
+export const metadata = {
+  title: 'Pranav Arora',
+  description: 'ML Engineer. Singapore to Abu Dhabi.',
 };
 
 export default function RootLayout({ children }) {
   return (
-    <html lang="en">
+    <html
+      lang="en"
+      className={`${fraunces.variable} ${grotesk.variable} ${mono.variable}`}
+    >
       <head>
-        <link rel="preconnect" href="https://fonts.googleapis.com" />
-        <link rel="preconnect" href="https://fonts.gstatic.com" crossOrigin="anonymous" />
-        <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🏜️</text></svg>" />
-        <link
-          href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&family=Space+Mono:wght@400;700&display=swap"
-          rel="stylesheet"
-        />
+        {/* dark theme declared — stops Dark Reader from injecting and breaking hydration */}
+        <meta name="color-scheme" content="dark" />
       </head>
       <body>{children}</body>
     </html>

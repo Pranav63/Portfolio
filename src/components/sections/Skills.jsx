@@ -1,73 +1,43 @@
 'use client';
 import { useRef } from 'react';
 import { motion, useInView } from 'framer-motion';
+import Waypoint from './Waypoint';
 
+// Trimmed and ranked. First two items in each row are featured.
+// Depth signal beats breadth signal at senior level.
 const SKILLS = [
   {
     category: 'Agentic AI & LLMs',
-    items: [
-      'LangGraph', 'LangChain', 'GPT-4o', 'RAG Systems',
-      'Multi-Agent Orchestration', 'Prompt Engineering',
-      'Function Calling', 'LangSmith', 'AutoGen', 'MCP',
-    ],
+    items: ['LangGraph', 'Multi-Agent Orchestration', 'LangChain', 'RAG Systems', 'Function Calling', 'MCP', 'Prompt Engineering'],
   },
   {
     category: 'Model Development',
-    items: [
-      'QLoRA / PEFT', 'Fine-tuning', 'vLLM', 'HuggingFace Transformers',
-      'PPO / Ray RLlib', 'PyTorch', 'TensorFlow', 'Scikit-learn',
-      'XGBoost', 'SHAP / LIME',
-    ],
+    items: ['QLoRA / PEFT Fine-tuning', 'PPO / Ray RLlib', 'vLLM', 'PyTorch', 'HuggingFace', 'XGBoost', 'SHAP'],
   },
   {
     category: 'Evaluation & Observability',
-    items: [
-      'RAGAS', 'LLM-as-Judge', 'MLflow', 'MTEB',
-      'Prometheus', 'Grafana', 'LangSmith Tracing',
-      'A/B Testing', 'Model Versioning', 'Drift Detection',
-    ],
+    items: ['RAGAS', 'LLM-as-Judge', 'MLflow', 'Langfuse / LangSmith', 'Prometheus', 'Grafana', 'Drift Detection'],
   },
   {
     category: 'Cloud & Infra',
-    items: [
-      'Azure AI Foundry', 'Azure OpenAI', 'AKS', 'Azure DevOps',
-      'AWS (SageMaker, Bedrock, EKS)', 'GCP (Vertex AI, BigQuery)',
-      'Kubernetes', 'Docker', 'Istio', 'Keycloak',
-    ],
+    items: ['Azure OpenAI / AI Foundry', 'Kubernetes', 'AKS / EKS', 'Istio', 'Docker', 'Keycloak', 'AWS SageMaker', 'GCP Vertex AI'],
   },
   {
     category: 'MLOps & Deployment',
-    items: [
-      'KServe', 'BentoML', 'TorchServe', 'FastAPI',
-      'GitHub Actions', 'CI/CD Pipelines', 'Kubeflow',
-      'HashiCorp Vault', 'Azure Container Apps', 'Fly.io',
-    ],
+    items: ['KServe', 'FastAPI', 'CI/CD (Jenkins, GH Actions)', 'HashiCorp Vault', 'BentoML', 'Azure Container Apps'],
   },
   {
     category: 'Data & Vector Stores',
-    items: [
-      'PostgreSQL (pgvector)', 'Qdrant', 'Pinecone', 'ChromaDB',
-      'Redis', 'Supabase', 'Snowflake', 'Apache Airflow',
-      'Azure Synapse', 'Prefect',
-    ],
+    items: ['PostgreSQL + pgvector', 'Qdrant', 'Redis', 'Airflow', 'Snowflake', 'Supabase'],
   },
 ];
 
 const fadeUp = {
-  hidden: { opacity: 0, y: 32 },
+  hidden: { opacity: 0, y: 28 },
   visible: (i = 0) => ({
     opacity: 1,
     y: 0,
-    transition: { duration: 0.65, delay: i * 0.08, ease: [0.22, 1, 0.36, 1] },
-  }),
-};
-
-const badgeVariants = {
-  hidden: { opacity: 0, scale: 0.85 },
-  visible: (i = 0) => ({
-    opacity: 1,
-    scale: 1,
-    transition: { duration: 0.35, delay: i * 0.04, ease: [0.22, 1, 0.36, 1] },
+    transition: { duration: 0.6, delay: i * 0.08, ease: [0.22, 1, 0.36, 1] },
   }),
 };
 
@@ -77,101 +47,45 @@ export default function Skills() {
 
   return (
     <section id="skills" className="section-waypoint" ref={ref}>
-      <div style={{
-        position: 'absolute',
-        inset: 0,
-        background: 'linear-gradient(to bottom, transparent, rgba(9,12,24,0.8) 20%, rgba(9,12,24,0.88) 50%, rgba(9,12,24,0.8) 80%, transparent)',
-        pointerEvents: 'none',
-        zIndex: 1,
-      }} />
+      <div className="section-scrim" />
 
-      <div className="section-inner" style={{ position: 'relative', zIndex: 2 }}>
-        <motion.span
-          className="label"
-          variants={fadeUp} initial="hidden" animate={inView ? 'visible' : 'hidden'} custom={0}
-        >
-          What I work with
-        </motion.span>
+      <div className="section-inner">
+        <Waypoint id="03" time="13:00" phase="High sun" inView={inView} />
+
         <motion.h2
           className="section-title"
           variants={fadeUp} initial="hidden" animate={inView ? 'visible' : 'hidden'} custom={1}
-          style={{ marginBottom: '16px' }}
         >
-          Skills & Expertise
+          The <em>toolkit</em>
         </motion.h2>
+
         <motion.p
+          className="section-lede"
           variants={fadeUp} initial="hidden" animate={inView ? 'visible' : 'hidden'} custom={2}
-          style={{
-            color: 'var(--text-dim)',
-            fontSize: '0.95rem',
-            marginBottom: '56px',
-            maxWidth: '540px',
-          }}
         >
-          Full-stack production AI — from fine-tuning models to deploying
-          agentic systems at enterprise scale.
+          Full lifecycle: fine-tune the model, deploy it on Kubernetes, watch it
+          in production. The first two in each row are where I go deepest.
         </motion.p>
 
-        <div style={{
-          display: 'grid',
-          gridTemplateColumns: 'repeat(auto-fit, minmax(300px, 1fr))',
-          gap: '24px',
-        }}>
+        <div>
           {SKILLS.map((group, gi) => (
             <motion.div
+              className="spec-row"
               key={group.category}
-              className="glass-panel"
               variants={fadeUp}
               initial="hidden"
               animate={inView ? 'visible' : 'hidden'}
               custom={gi + 3}
-              whileHover={{ borderColor: 'rgba(201,168,76,0.35)' }}
-              style={{ padding: '24px 28px' }}
             >
-              {/* Category header */}
-              <div style={{
-                display: 'flex',
-                alignItems: 'center',
-                gap: '10px',
-                marginBottom: '18px',
-              }}>
-                <div style={{
-                  width: '20px',
-                  height: '2px',
-                  background: '#C9A84C',
-                  boxShadow: '0 0 8px rgba(201,168,76,0.6)',
-                  flexShrink: 0,
-                }} />
-                <span style={{
-                  fontSize: '0.7rem',
-                  fontWeight: 700,
-                  letterSpacing: '0.18em',
-                  textTransform: 'uppercase',
-                  color: '#C9A84C',
-                }}>
-                  {group.category}
-                </span>
-              </div>
-
-              {/* Badges */}
-              <div style={{ display: 'flex', flexWrap: 'wrap', gap: '8px' }}>
+              <span className="spec-label">{group.category}</span>
+              <div className="spec-items">
                 {group.items.map((skill, si) => (
-                  <motion.span
+                  <span
                     key={skill}
-                    className="tag"
-                    variants={badgeVariants}
-                    initial="hidden"
-                    animate={inView ? 'visible' : 'hidden'}
-                    custom={gi * 0.5 + si * 0.06}
-                    whileHover={{
-                      background: 'rgba(201,168,76,0.18)',
-                      borderColor: 'rgba(201,168,76,0.5)',
-                      y: -2,
-                    }}
-                    style={{ cursor: 'default' }}
+                    className={`spec-item${si < 2 ? ' featured' : ''}`}
                   >
                     {skill}
-                  </motion.span>
+                  </span>
                 ))}
               </div>
             </motion.div>
