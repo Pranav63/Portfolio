@@ -18,7 +18,7 @@ export default function Hero() {
       <div style={{
         position: 'absolute',
         inset: 0,
-        background: 'radial-gradient(ellipse 90% 80% at 50% 50%, rgba(9,12,24,0.62) 0%, rgba(9,12,24,0.28) 55%, transparent 78%)',
+        background: 'radial-gradient(ellipse 90% 80% at 50% 50%, rgba(7,11,22,0.62) 0%, rgba(7,11,22,0.28) 55%, transparent 78%)',
         pointerEvents: 'none',
         zIndex: 1,
       }} />
@@ -36,7 +36,7 @@ export default function Hero() {
           padding: '0 24px',
         }}
       >
-        {/* journey coordinates, Singapore to Abu Dhabi */}
+        {/* destination marker, arrived not arriving */}
         <motion.div
           variants={fadeUp} custom={0}
           style={{
@@ -47,19 +47,29 @@ export default function Hero() {
             fontSize: '0.68rem',
             letterSpacing: '0.16em',
             color: 'var(--gold-light)',
-            background: 'rgba(9,12,24,0.7)',
+            background: 'rgba(7,11,22,0.7)',
             border: '1px solid var(--gold-dim)',
             borderRadius: '100px',
             padding: '8px 22px',
             marginBottom: '36px',
           }}
         >
-          <span>1.35° N, 103.82° E</span>
-          <span style={{ color: 'var(--gold)' }}>&#8594;</span>
-          <span>24.45° N, 54.38° E</span>
+          <span lang="ar" dir="rtl" style={{
+            fontFamily: 'var(--font-arabic)',
+            fontSize: '0.82rem',
+            letterSpacing: 0,
+            color: 'var(--gold)',
+          }}>
+            أبوظبي
+          </span>
+          <span style={{
+            width: '1px',
+            height: '12px',
+            background: 'var(--gold-dim)',
+          }} />
+          <span>Abu Dhabi &middot; 24.45&deg; N, 54.38&deg; E</span>
         </motion.div>
 
-        {/* name, serif display */}
         <motion.h1
           variants={fadeUp} custom={1}
           style={{
@@ -74,17 +84,18 @@ export default function Hero() {
         >
           Pranav{' '}
           <em style={{
-            fontStyle: 'italic',
-            background: 'linear-gradient(135deg, #C9A84C 0%, #F0D99A 45%, #C9A84C 100%)',
-            WebkitBackgroundClip: 'text',
-            WebkitTextFillColor: 'transparent',
-            backgroundClip: 'text',
-          }}>
+          fontStyle: 'italic',
+          display: 'inline-block',
+          paddingRight: '0.12em',
+          background: 'linear-gradient(135deg, #C9A84C 0%, #F0D99A 45%, #C9A84C 100%)',
+          WebkitBackgroundClip: 'text',
+          WebkitTextFillColor: 'transparent',
+          backgroundClip: 'text',
+        }}>
             Arora
           </em>
         </motion.h1>
 
-        {/* one confident static line, no typewriter */}
         <motion.p
           variants={fadeUp} custom={2}
           style={{
@@ -93,7 +104,7 @@ export default function Hero() {
             lineHeight: 1.65,
             maxWidth: '640px',
             margin: '0 auto 18px',
-            textShadow: '0 2px 20px rgba(9,12,24,0.8)',
+            textShadow: '0 2px 20px rgba(7,11,22,0.8)',
           }}
         >
           ML engineer shipping production AI for six years.
@@ -112,10 +123,9 @@ export default function Hero() {
             marginBottom: '52px',
           }}
         >
-          Singapore, relocating to Abu Dhabi
+          Relocating from Singapore &middot; Open to UAE roles
         </motion.p>
 
-        {/* CTAs */}
         <motion.div
           variants={fadeUp} custom={4}
           style={{ display: 'flex', gap: '16px', justifyContent: 'center', flexWrap: 'wrap' }}
@@ -126,7 +136,7 @@ export default function Hero() {
           </a>
         </motion.div>
 
-        {/* scroll cue ties to the day-night journey */}
+        {/* scroll cue */}
         <motion.div
           variants={fadeUp} custom={5}
           style={{
@@ -148,7 +158,7 @@ export default function Hero() {
             color: 'rgba(232,213,163,0.9)',
             textShadow: '0 0 20px rgba(201,168,76,0.8)',
           }}>
-            Scroll until nightfall
+            Explore the work
           </span>
           <div style={{
             width: '1px',

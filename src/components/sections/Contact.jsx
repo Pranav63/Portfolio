@@ -80,26 +80,25 @@ export default function Contact() {
   return (
     <section id="contact" className="section-waypoint" ref={ref}>
       <div className="section-scrim" style={{
-        background: 'linear-gradient(to bottom, transparent, rgba(9,12,24,0.85) 15%, rgba(9,12,24,0.92) 50%, rgba(9,12,24,0.85) 85%, transparent)',
+        background: 'linear-gradient(to bottom, transparent, rgba(7,11,22,0.85) 15%, rgba(7,11,22,0.92) 50%, rgba(7,11,22,0.85) 85%, transparent)',
       }} />
 
       <div className="section-inner">
-        <Waypoint id="06" time="23:10" phase="Campfire" inView={inView} />
+        <Waypoint id="06" label="Contact" labelAr="تواصل" inView={inView} />
 
         <motion.h2
           className="section-title"
           variants={fadeUp} initial="hidden" animate={inView ? 'visible' : 'hidden'} custom={1}
         >
-          Pull up to <em>the fire</em>
+          The majlis is <em>open</em>
         </motion.h2>
 
         <motion.p
           className="section-lede"
           variants={fadeUp} initial="hidden" animate={inView ? 'visible' : 'hidden'} custom={2}
         >
-          The sun set somewhere around the experience section. If you are hiring
-          for applied AI in the UAE, or have a production AI problem worth
-          talking about, this is the place.
+          If you are hiring for applied AI in the UAE, or have a production AI
+          problem worth talking about, this is the place.
         </motion.p>
 
         <div style={{
@@ -222,7 +221,7 @@ export default function Contact() {
                 color: 'var(--gold-dim)',
                 fontFamily: 'var(--font-mono)',
               }}>
-                pranav@campfire ~
+                pranav@abudhabi ~
               </span>
             </div>
 

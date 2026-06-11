@@ -1,4 +1,4 @@
-import { Fraunces, Space_Grotesk, Space_Mono } from 'next/font/google';
+import { Fraunces, Space_Grotesk, Space_Mono, IBM_Plex_Sans_Arabic } from 'next/font/google';
 import '@/styles/globals.css';
 
 const fraunces = Fraunces({
@@ -8,20 +8,25 @@ const fraunces = Fraunces({
 });
 const grotesk = Space_Grotesk({ subsets: ['latin'], variable: '--font-grotesk' });
 const mono = Space_Mono({ subsets: ['latin'], weight: ['400', '700'], variable: '--font-space-mono' });
+const plexArabic = IBM_Plex_Sans_Arabic({
+  subsets: ['arabic'],
+  weight: ['400', '600'],
+  variable: '--font-plex-arabic',
+});
 
 export const metadata = {
-  title: 'Pranav Arora',
-  description: 'ML Engineer. Singapore to Abu Dhabi.',
+  title: 'Pranav Arora | ML Engineer',
+  description: 'Production AI engineer. RL scheduling, multi-agent LLM platforms, MLOps. Relocating to Abu Dhabi.',
 };
 
 export default function RootLayout({ children }) {
   return (
     <html
       lang="en"
-      className={`${fraunces.variable} ${grotesk.variable} ${mono.variable}`}
+      className={`${fraunces.variable} ${grotesk.variable} ${mono.variable} ${plexArabic.variable}`}
     >
       <head>
-        {/* dark theme declared — stops Dark Reader from injecting and breaking hydration */}
+        {/* dark theme declared, stops Dark Reader from breaking hydration */}
         <meta name="color-scheme" content="dark" />
       </head>
       <body>{children}</body>

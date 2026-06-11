@@ -6,9 +6,9 @@
 
 :root {
   /* palette */
-  --night:        #090C18;
-  --night-85:     rgba(9, 12, 24, 0.85);
-  --night-60:     rgba(9, 12, 24, 0.6);
+  --night:        #070B16;
+  --night-85:     rgba(7, 11, 22, 0.85);
+  --night-60:     rgba(7, 11, 22, 0.6);
   --gold:         #C9A84C;
   --gold-light:   #E8D5A3;
   --gold-dim:     rgba(201, 168, 76, 0.35);
@@ -19,12 +19,14 @@
   --text-dim:     rgba(237, 232, 220, 0.66);
   --text-muted:   rgba(237, 232, 220, 0.46);
   --rule:         rgba(201, 168, 76, 0.18);
-  --panel:        rgba(9, 12, 24, 0.42);
+  --panel:        rgba(7, 11, 22, 0.42);
 
-  /* type */
-  --font-display: 'Fraunces', Georgia, serif;
-  --font-main:    'Space Grotesk', sans-serif;
-  --font-mono:    'Space Mono', monospace;
+  /* type, wired to next/font variables. Literal family names like
+     'Fraunces' do NOT match next/font's hashed family names. */
+  --font-display: var(--font-fraunces), Georgia, serif;
+  --font-main:    var(--font-grotesk), sans-serif;
+  --font-mono:    var(--font-space-mono), monospace;
+  --font-arabic:  var(--font-plex-arabic), sans-serif;
 
   /* scale */
   --step-hero:    clamp(3.4rem, 10vw, 7rem);
@@ -44,6 +46,21 @@ body {
   font-family: var(--font-main);
   overflow-x: hidden;
   -webkit-font-smoothing: antialiased;
+}
+
+/* mashrabiya lattice, the one Abu Dhabi gesture. Kept near-invisible,
+   masked away from the content column so it reads as texture at the edges */
+body::before {
+  content: '';
+  position: fixed;
+  inset: 0;
+  z-index: 1;
+  pointer-events: none;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='96' height='96' viewBox='0 0 96 96'%3E%3Cg fill='none' stroke='%23C9A84C' stroke-width='1'%3E%3Crect x='30' y='30' width='36' height='36'/%3E%3Crect x='30' y='30' width='36' height='36' transform='rotate(45 48 48)'/%3E%3C/g%3E%3C/svg%3E");
+  background-size: 96px 96px;
+  opacity: 0.05;
+  -webkit-mask-image: radial-gradient(ellipse 75% 70% at 50% 45%, transparent 35%, black 100%);
+  mask-image: radial-gradient(ellipse 75% 70% at 50% 45%, transparent 35%, black 100%);
 }
 
 /* accessibility floor */
@@ -92,16 +109,16 @@ body {
   background: linear-gradient(
     to bottom,
     transparent,
-    rgba(9, 12, 24, 0.78) 18%,
-    rgba(9, 12, 24, 0.86) 50%,
-    rgba(9, 12, 24, 0.78) 82%,
+    rgba(7, 11, 22, 0.78) 18%,
+    rgba(7, 11, 22, 0.86) 50%,
+    rgba(7, 11, 22, 0.78) 82%,
     transparent
   );
   pointer-events: none;
   z-index: 1;
 }
 
-/* waypoint marker, the expedition signature */
+/* waypoint marker */
 .waypoint {
   display: flex;
   align-items: baseline;
@@ -125,12 +142,19 @@ body {
   align-self: center;
 }
 
-.waypoint .wp-time {
-  color: var(--text-muted);
-}
-
 .waypoint .wp-phase {
   color: var(--gold-light);
+}
+
+/* Arabic counterpart, right-aligned. One accent, set properly. */
+.waypoint .wp-ar {
+  margin-left: auto;
+  font-family: var(--font-arabic);
+  font-size: 0.86rem;
+  font-weight: 400;
+  letter-spacing: 0;
+  text-transform: none;
+  color: var(--gold-dim);
 }
 
 /* display titles */
@@ -157,7 +181,7 @@ body {
   margin-bottom: 64px;
 }
 
-/* ledger, replaces stat cards */
+/* ledger */
 .ledger {
   display: grid;
   grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
@@ -192,7 +216,7 @@ body {
   line-height: 1.5;
 }
 
-/* panel, used sparingly now */
+/* panel */
 .panel {
   background: var(--panel);
   border: 1px solid var(--rule);
@@ -364,6 +388,7 @@ body {
 
 @media (max-width: 768px) {
   .section-inner { padding: 84px 20px; }
+  body::before { background-size: 72px 72px; }
   .spec-row {
     grid-template-columns: 1fr;
     gap: 12px;

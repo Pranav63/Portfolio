@@ -169,7 +169,7 @@ export default function Navigation() {
         </svg>
 
         <motion.a
-          href="https://drive.google.com/file/d/13eRwg012J-Q5AsMRfyBbHBOHw8MardYu/view?usp=sharing"
+          href="/Pranav_Arora.pdf"
           target="_blank"
           rel="noopener noreferrer"
           whileHover={{ scale: 1.05, boxShadow: '0 0 16px rgba(201,168,76,0.3)' }}

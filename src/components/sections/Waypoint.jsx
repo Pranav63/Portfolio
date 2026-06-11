@@ -1,9 +1,9 @@
 'use client';
 import { motion } from 'framer-motion';
 
-// Waypoint marker. The id, time and phase mirror the 3d scene's
-// time-of-day at that scroll position, so structure encodes real state.
-export default function Waypoint({ id, time, phase, inView = true, delay = 0 }) {
+// Waypoint marker. English section label with an Arabic counterpart,
+// right-aligned. The time/phase props are gone with the sun cycle.
+export default function Waypoint({ id, label, labelAr, inView = true, delay = 0 }) {
   return (
     <motion.div
       className="waypoint"
@@ -13,8 +13,8 @@ export default function Waypoint({ id, time, phase, inView = true, delay = 0 }) 
     >
       <span className="wp-id">WP-{id}</span>
       <span className="wp-rule" />
-      <span className="wp-time">{time}</span>
-      <span className="wp-phase">{phase}</span>
+      <span className="wp-phase">{label}</span>
+      {labelAr && <span className="wp-ar" lang="ar" dir="rtl">{labelAr}</span>}
     </motion.div>
   );
 }

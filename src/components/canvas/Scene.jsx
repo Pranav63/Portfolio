@@ -4,6 +4,9 @@ import { Canvas, useFrame, useThree } from '@react-three/fiber';
 import * as THREE from 'three';
 import { useScrollProgress } from '@/hooks/useScrollProgress';
 
+// Fixed Gulf blue hour. One mood, no day-night cycle.
+const NIGHT = '#070B16';
+
 const WAYPOINTS = [
   { pos: [0,   2.8, 14],  target: [0, 0.8,  0]  },
   { pos: [-2,  3.5, 10],  target: [0, 1.2,  0]  },
@@ -11,15 +14,6 @@ const WAYPOINTS = [
   { pos: [0,   2.8, 1],   target: [0, 1.2,-12]  },
   { pos: [3,   4,  -3],   target: [0, 2,  -10]  },
   { pos: [0,   7,  -1],   target: [0, 0,   -6]  },
-];
-
-const SKY_PALETTE = [
-  { h: [0.96, 0.76, 0.40], m: [0.52, 0.72, 0.94], z: [0.20, 0.42, 0.80] },
-  { h: [0.94, 0.58, 0.22], m: [0.40, 0.58, 0.88], z: [0.14, 0.30, 0.72] },
-  { h: [0.82, 0.38, 0.10], m: [0.20, 0.30, 0.60], z: [0.08, 0.16, 0.50] },
-  { h: [0.60, 0.22, 0.06], m: [0.12, 0.10, 0.30], z: [0.05, 0.06, 0.24] },
-  { h: [0.10, 0.06, 0.18], m: [0.05, 0.04, 0.14], z: [0.02, 0.02, 0.10] },
-  { h: [0.02, 0.02, 0.06], m: [0.01, 0.01, 0.05], z: [0.00, 0.00, 0.03] },
 ];
 
 function lV(a, b, t) {
@@ -33,12 +27,11 @@ function getIdx(progress) {
   return { idx, t: scaled - idx, next: Math.min(idx + 1, total) };
 }
 
-// ── Camera ────────────────────────────────────────────────────────────────────
+// Camera still travels through the scene with scroll, palette stays fixed
 const CameraRig = ({ progress }) => {
-  const { camera, scene } = useThree();
+  const { camera } = useThree();
   const tp = useRef(new THREE.Vector3());
   const tl = useRef(new THREE.Vector3());
-  const bg = useRef(new THREE.Color());
 
   useFrame(({ clock }) => {
     const { idx, t, next } = getIdx(progress);
@@ -53,24 +46,12 @@ const CameraRig = ({ progress }) => {
 
     camera.position.lerp(tp.current, 0.045);
     camera.lookAt(tl.current);
-
-    const cA = SKY_PALETTE[idx].h;
-    const cB = SKY_PALETTE[next].h;
-    bg.current.setRGB(...lV(cA, cB, t));
-    scene.background = bg.current;
-
-    if (scene.fog) {
-      scene.fog.color.copy(bg.current);
-      scene.fog.density = 0.016 + progress * 0.022;
-    }
   });
   return null;
 };
 
-// ── Sky dome ──────────────────────────────────────────────────────────────────
-const SkyDome = ({ progress }) => {
-  const matRef = useRef();
-
+// Static sky: deep navy zenith, thin warm afterglow band at the horizon
+const SkyDome = () => {
   const vert = `
     varying float vY;
     void main() {
@@ -80,41 +61,24 @@ const SkyDome = ({ progress }) => {
   `;
   const frag = `
     varying float vY;
-    uniform vec3 uHorizon;
-    uniform vec3 uMid;
-    uniform vec3 uZenith;
     void main() {
+      vec3 horizon = vec3(0.34, 0.22, 0.10);
+      vec3 mid     = vec3(0.055, 0.085, 0.190);
+      vec3 zenith  = vec3(0.012, 0.018, 0.045);
       float t  = clamp(vY, 0.0, 1.0);
-      vec3 col = mix(uHorizon, uMid,   smoothstep(0.0, 0.25, t));
-      col       = mix(col,     uZenith, smoothstep(0.2, 0.8,  t));
-      col       = mix(vec3(0.10, 0.07, 0.04), col, smoothstep(-0.06, 0.08, vY));
+      vec3 col = mix(horizon, mid,   smoothstep(0.0, 0.16, t));
+      col      = mix(col,     zenith, smoothstep(0.12, 0.65, t));
+      col      = mix(vec3(0.045, 0.045, 0.055), col, smoothstep(-0.06, 0.05, vY));
       gl_FragColor = vec4(col, 1.0);
     }
   `;
-
-  const uniforms = useMemo(() => ({
-    uHorizon: { value: new THREE.Color(...SKY_PALETTE[0].h) },
-    uMid:     { value: new THREE.Color(...SKY_PALETTE[0].m) },
-    uZenith:  { value: new THREE.Color(...SKY_PALETTE[0].z) },
-  }), []);
-
-  useFrame(() => {
-    if (!matRef.current) return;
-    const { idx, t, next } = getIdx(progress);
-    const p = SKY_PALETTE;
-    uniforms.uHorizon.value.setRGB(...lV(p[idx].h, p[next].h, t));
-    uniforms.uMid.value.setRGB(...lV(p[idx].m,     p[next].m, t));
-    uniforms.uZenith.value.setRGB(...lV(p[idx].z,  p[next].z, t));
-  });
 
   return (
     <mesh>
       <sphereGeometry args={[280, 32, 16]} />
       <shaderMaterial
-        ref={matRef}
         vertexShader={vert}
         fragmentShader={frag}
-        uniforms={uniforms}
         side={THREE.BackSide}
         depthWrite={false}
       />
@@ -122,58 +86,27 @@ const SkyDome = ({ progress }) => {
   );
 };
 
-// ── Sun ───────────────────────────────────────────────────────────────────────
-const Sun = ({ progress }) => {
-  const ref    = useRef();
-  const matRef = useRef();
-
+// Low static glow where the sun went down, replaces the moving sun
+const Afterglow = () => {
   const vert = `varying vec2 vUv; void main(){ vUv=uv; gl_Position=projectionMatrix*modelViewMatrix*vec4(position,1.0); }`;
   const frag = `
     varying vec2 vUv;
-    uniform float uOpacity;
-    uniform vec3  uColor;
     void main(){
-      float d    = distance(vUv, vec2(0.5));
-      float disc = 1.0 - smoothstep(0.0,  0.14, d);
-      float g1   = (1.0 - smoothstep(0.12, 0.42, d)) * 0.35;
-      float g2   = (1.0 - smoothstep(0.35, 1.0,  d)) * 0.08;
-      vec3 col   = uColor * disc + uColor * g1 + uColor * g2;
-      float a    = (disc + g1 + g2) * uOpacity;
-      gl_FragColor = vec4(col, a);
+      vec2 c   = vec2(0.5, 0.0);
+      float d  = length((vUv - c) * vec2(1.0, 2.4));
+      float g1 = (1.0 - smoothstep(0.0,  0.45, d)) * 0.45;
+      float g2 = (1.0 - smoothstep(0.3,  1.0,  d)) * 0.12;
+      vec3 col = vec3(1.0, 0.62, 0.24) * (g1 + g2);
+      gl_FragColor = vec4(col, (g1 + g2));
     }
   `;
 
-  const uniforms = useMemo(() => ({
-    uOpacity: { value: 1.0 },
-    uColor:   { value: new THREE.Color(1.0, 0.85, 0.45) },
-  }), []);
-
-  useFrame(() => {
-    if (!ref.current || !matRef.current) return;
-    const angle = -Math.PI * 0.05 + progress * Math.PI * 0.9;
-    ref.current.position.set(
-      Math.cos(angle) * 80,
-      Math.sin(angle) * 55 + 5,
-      -120
-    );
-    ref.current.lookAt(0, 0, 0);
-    const night = Math.max(0, (progress - 0.52) / 0.18);
-    matRef.current.uniforms.uOpacity.value = Math.max(0, 1 - night);
-    matRef.current.uniforms.uColor.value.setRGB(
-      1.0,
-      Math.max(0.28, 0.88 - progress * 0.60),
-      Math.max(0.02, 0.44 - progress * 0.42)
-    );
-  });
-
   return (
-    <mesh ref={ref}>
-      <planeGeometry args={[20, 20]} />
+    <mesh position={[0, 8, -200]}>
+      <planeGeometry args={[260, 70]} />
       <shaderMaterial
-        ref={matRef}
         vertexShader={vert}
         fragmentShader={frag}
-        uniforms={uniforms}
         transparent
         depthWrite={false}
         blending={THREE.AdditiveBlending}
@@ -182,32 +115,23 @@ const Sun = ({ progress }) => {
   );
 };
 
-// ── Moon ─────────────────────────────────────────────────────────────────────
-const Moon = ({ progress }) => {
-  const ref = useRef();
-  useFrame(() => {
-    if (!ref.current) return;
-    const vis = Math.max(0, (progress - 0.65) / 0.18);
-    ref.current.material.opacity          = vis * 0.88;
-    ref.current.material.emissiveIntensity = vis * 0.35;
-  });
-  return (
-    <mesh ref={ref} position={[-55, 55, -100]}>
-      <sphereGeometry args={[5, 32, 32]} />
-      <meshStandardMaterial
-        color="#D8D4C4"
-        emissive="#908878"
-        emissiveIntensity={0}
-        roughness={0.95}
-        transparent
-        opacity={0}
-      />
-    </mesh>
-  );
-};
+// Static moon, no fade logic
+const Moon = () => (
+  <mesh position={[-48, 46, -110]}>
+    <sphereGeometry args={[4.5, 32, 32]} />
+    <meshStandardMaterial
+      color="#D8D4C4"
+      emissive="#A89E8C"
+      emissiveIntensity={0.4}
+      roughness={0.95}
+      transparent
+      opacity={0.8}
+    />
+  </mesh>
+);
 
-// ── Terrain ───────────────────────────────────────────────────────────────────
-const Terrain = ({ progress }) => {
+// Dunes, fixed dusk grade: navy shadow valleys, gold-lit crests
+const Terrain = () => {
   const matRef = useRef();
 
   const vert = `
@@ -265,7 +189,7 @@ const Terrain = ({ progress }) => {
     void main(){
       float n =
         sn(vec3(position.x*.20, 0., position.z*.13)) * 2.2 +
-        sn(vec3(position.x*.40 + uTime*.03, 0., position.z*.30)) * 0.85 +
+        sn(vec3(position.x*.40 + uTime*.02, 0., position.z*.30)) * 0.85 +
         sn(vec3(position.x*.80, 0., position.z*.60)) * 0.30;
       float h = n * smoothstep(0., 5., -position.z - 2.);
       vH   = h;
@@ -277,33 +201,26 @@ const Terrain = ({ progress }) => {
   const frag = `
     varying vec3  vPos;
     varying float vH;
-    uniform float uNight;
-    uniform vec3  uSandA;
-    uniform vec3  uSandB;
-
     void main(){
+      vec3 shadowSand = vec3(0.060, 0.072, 0.125);
+      vec3 litSand    = vec3(0.205, 0.180, 0.140);
       float t   = clamp(vH * 0.36 + 0.52, 0., 1.);
-      vec3 sand = mix(uSandA, uSandB, t);
-      // subtle crest highlight — toned down
+      vec3 sand = mix(shadowSand, litSand, t);
+      // crests catch the last of the horizon light
       float crest = smoothstep(0.9, 2.4, vH);
-      sand += vec3(0.10, 0.07, 0.03) * crest * (1. - uNight * 0.8);
-      // night tint
-      sand = mix(sand, sand * vec3(0.25, 0.30, 0.42), uNight * 0.72);
+      float facing = smoothstep(-30., -90., vPos.z);
+      sand += vec3(0.22, 0.13, 0.05) * crest * (0.4 + facing * 0.6);
       gl_FragColor = vec4(sand, 1.0);
     }
   `;
 
   const uniforms = useMemo(() => ({
-    uTime:  { value: 0 },
-    uNight: { value: 0 },
-    uSandA: { value: new THREE.Color(0.40, 0.27, 0.11) },
-    uSandB: { value: new THREE.Color(0.82, 0.64, 0.35) },
+    uTime: { value: 0 },
   }), []);
 
   useFrame(({ clock }) => {
     if (!matRef.current) return;
-    matRef.current.uniforms.uTime.value  = clock.getElapsedTime();
-    matRef.current.uniforms.uNight.value = Math.max(0, (progress - 0.58) / 0.38);
+    matRef.current.uniforms.uTime.value = clock.getElapsedTime();
   });
 
   return (
@@ -319,10 +236,10 @@ const Terrain = ({ progress }) => {
   );
 };
 
-// ── Sand particles — muted, atmospheric ──────────────────────────────────────
-const Sand = ({ progress }) => {
+// Faint drifting sand, fixed low opacity
+const Sand = () => {
   const ref   = useRef();
-  const COUNT = 2200;
+  const COUNT = 1600;
 
   const { pos, vel, rnd } = useMemo(() => {
     const p = new Float32Array(COUNT * 3);
@@ -332,9 +249,9 @@ const Sand = ({ progress }) => {
       p[i*3]   = (Math.random()-.5) * 55;
       p[i*3+1] = Math.random() * 4.5;
       p[i*3+2] = (Math.random()-.5) * 45;
-      v[i*3]   = (Math.random()-.25) * 0.022;
+      v[i*3]   = (Math.random()-.25) * 0.018;
       v[i*3+1] = (Math.random()-.5)  * 0.003;
-      v[i*3+2] = -(Math.random() * 0.015 + 0.004);
+      v[i*3+2] = -(Math.random() * 0.012 + 0.004);
       r[i]     = Math.random();
     }
     return { pos: p, vel: v, rnd: r };
@@ -342,10 +259,9 @@ const Sand = ({ progress }) => {
 
   const vert = `
     attribute float aRnd;
-    uniform float uOpacity;
     varying float vOp;
     void main(){
-      vOp = uOpacity * (0.3 + aRnd * 0.5);
+      vOp = 0.14 * (0.3 + aRnd * 0.5);
       vec4 mv = modelViewMatrix * vec4(position, 1.0);
       gl_PointSize = (1.0 + aRnd * 1.5) * (100. / -mv.z);
       gl_Position  = projectionMatrix * mv;
@@ -356,21 +272,15 @@ const Sand = ({ progress }) => {
     void main(){
       float d = distance(gl_PointCoord, vec2(0.5));
       float a = (1. - smoothstep(0.3, 0.5, d)) * vOp;
-      // Warm but muted sand tone
-      gl_FragColor = vec4(0.82, 0.70, 0.48, a);
+      gl_FragColor = vec4(0.72, 0.64, 0.50, a);
     }
   `;
-
-  const uniforms = useMemo(() => ({
-    uOpacity: { value: 0 },
-  }), []);
 
   useFrame(() => {
     if (!ref.current) return;
     const p = ref.current.geometry.attributes.position.array;
-    const intensity = Math.min(1, progress * 2.2);
     for (let i = 0; i < COUNT; i++) {
-      p[i*3]   += vel[i*3]   * (0.2 + intensity * 0.8);
+      p[i*3]   += vel[i*3]   * 0.5;
       p[i*3+1] += vel[i*3+1];
       p[i*3+2] += vel[i*3+2];
       if (p[i*3+2] < -22) {
@@ -380,8 +290,6 @@ const Sand = ({ progress }) => {
       }
     }
     ref.current.geometry.attributes.position.needsUpdate = true;
-    // Soft fade in, max 0.22 — barely visible, just atmospheric
-    uniforms.uOpacity.value = Math.min(0.22, progress * 0.45);
   });
 
   return (
@@ -393,7 +301,6 @@ const Sand = ({ progress }) => {
       <shaderMaterial
         vertexShader={vert}
         fragmentShader={frag}
-        uniforms={uniforms}
         transparent
         depthWrite={false}
         blending={THREE.NormalBlending}
@@ -402,8 +309,8 @@ const Sand = ({ progress }) => {
   );
 };
 
-// ── Stars — restrained ────────────────────────────────────────────────────────
-const Stars = ({ progress }) => {
+// Stars, always on, restrained
+const Stars = () => {
   const ref   = useRef();
   const COUNT = 1800;
 
@@ -424,11 +331,10 @@ const Stars = ({ progress }) => {
   const vert = `
     attribute float aRnd;
     uniform float uTime;
-    uniform float uOpacity;
     varying float vOp;
     void main(){
       float twinkle = sin(uTime * 1.4 + aRnd * 12.56) * 0.2 + 0.8;
-      vOp = uOpacity * twinkle * (0.25 + aRnd * 0.55);
+      vOp = 0.42 * twinkle * (0.25 + aRnd * 0.55);
       vec4 mv = modelViewMatrix * vec4(position, 1.0);
       gl_PointSize = (0.5 + aRnd * 1.0) * (280. / -mv.z);
       gl_Position  = projectionMatrix * mv;
@@ -444,15 +350,11 @@ const Stars = ({ progress }) => {
   `;
 
   const uniforms = useMemo(() => ({
-    uTime:    { value: 0 },
-    uOpacity: { value: 0 },
+    uTime: { value: 0 },
   }), []);
 
   useFrame(({ clock }) => {
-    if (!ref.current) return;
-    uniforms.uTime.value    = clock.getElapsedTime();
-    // Max 0.42 — present but not overwhelming
-    uniforms.uOpacity.value = Math.min(0.42, Math.max(0, (progress - 0.66) / 0.20));
+    uniforms.uTime.value = clock.getElapsedTime();
   });
 
   return (
@@ -473,215 +375,19 @@ const Stars = ({ progress }) => {
   );
 };
 
-// ── Milky Way — very subtle ───────────────────────────────────────────────────
-const MilkyWay = ({ progress }) => {
-  const ref   = useRef();
-  const COUNT = 900;
-
-  const { pos, rnd } = useMemo(() => {
-    const p = new Float32Array(COUNT * 3);
-    const r = new Float32Array(COUNT);
-    for (let i = 0; i < COUNT; i++) {
-      const angle  = (i / COUNT) * Math.PI * 2;
-      const spread = (Math.random() - 0.5) * 0.3;
-      p[i*3]   = Math.cos(angle + spread) * 140;
-      p[i*3+1] = Math.abs(Math.sin(angle) * 0.45 + 0.38) * 140 * 0.55 + 20;
-      p[i*3+2] = Math.sin(angle + spread) * 140 * 0.38 - 40;
-      r[i]     = Math.random();
-    }
-    return { pos: p, rnd: r };
-  }, []);
-
-  const vert = `
-    attribute float aRnd;
-    uniform float uOpacity;
-    varying float vOp;
-    void main(){
-      vOp = uOpacity * aRnd * 0.5;
-      vec4 mv = modelViewMatrix * vec4(position, 1.0);
-      gl_PointSize = (0.3 + aRnd * 0.7) * (280. / -mv.z);
-      gl_Position  = projectionMatrix * mv;
-    }
-  `;
-  const frag = `
-    varying float vOp;
-    void main(){
-      float d = distance(gl_PointCoord, vec2(0.5));
-      float a = (1. - smoothstep(0.2, 0.5, d)) * vOp;
-      gl_FragColor = vec4(0.75, 0.80, 1.0, a);
-    }
-  `;
-
-  const uniforms = useMemo(() => ({
-    uOpacity: { value: 0 },
-  }), []);
-
-  useFrame(() => {
-    if (!ref.current) return;
-    // Max 0.18 — barely a whisper
-    uniforms.uOpacity.value = Math.min(0.18, Math.max(0, (progress - 0.76) / 0.18));
-  });
-
-  return (
-    <points ref={ref}>
-      <bufferGeometry>
-        <bufferAttribute attach="attributes-position" count={COUNT} array={pos} itemSize={3} />
-        <bufferAttribute attach="attributes-aRnd"     count={COUNT} array={rnd} itemSize={1} />
-      </bufferGeometry>
-      <shaderMaterial
-        vertexShader={vert}
-        fragmentShader={frag}
-        uniforms={uniforms}
-        transparent
-        depthWrite={false}
-        blending={THREE.NormalBlending}
-      />
-    </points>
-  );
-};
-
-// ── Shooting stars — rare, subtle ────────────────────────────────────────────
-const ShootingStars = ({ progress }) => {
-  const ref   = useRef();
-  const COUNT = 4;
-
-  const stars = useMemo(() => Array.from({ length: COUNT }, (_, i) => ({
-    ox: (Math.random() - 0.5) * 100,
-    oy: 30 + Math.random() * 35,
-    oz: -60 - Math.random() * 40,
-    delay: i * 2.2 + Math.random() * 2,
-  })), []);
-
-  useFrame(({ clock }) => {
-    if (!ref.current) return;
-    const vis = Math.min(1, Math.max(0, (progress - 0.74) / 0.12));
-    ref.current.children.forEach((s, i) => {
-      const t = ((clock.getElapsedTime() + stars[i].delay) % 8) / 8;
-      s.position.x = stars[i].ox + t * 25;
-      s.position.y = stars[i].oy - t * 15;
-      // Fade in and out through arc
-      s.material.opacity = vis * Math.sin(t * Math.PI) * 0.65;
-    });
-  });
-
-  if (progress < 0.72) return null;
-
-  return (
-    <group ref={ref}>
-      {stars.map((s, i) => (
-        <mesh key={i} position={[s.ox, s.oy, s.oz]} rotation={[0, 0, -Math.PI / 5]}>
-          <planeGeometry args={[4, 0.05]} />
-          <meshBasicMaterial
-            color="#E8EEF8"
-            transparent
-            opacity={0}
-            depthWrite={false}
-          />
-        </mesh>
-      ))}
-    </group>
-  );
-};
-
-// ── Campfire ──────────────────────────────────────────────────────────────────
-const Campfire = ({ progress }) => {
-  const flameRef = useRef();
-  const glowRef  = useRef();
-
-  useFrame(({ clock }) => {
-    const t   = clock.getElapsedTime();
-    const vis = Math.max(0, (progress - 0.84) / 0.1);
-    if (flameRef.current) {
-      flameRef.current.scale.y = 0.88 + Math.sin(t * 9)   * 0.16;
-      flameRef.current.scale.x = 0.92 + Math.sin(t * 7+1) * 0.10;
-      flameRef.current.material.opacity = vis * (0.65 + Math.sin(t * 6) * 0.25);
-    }
-    if (glowRef.current) {
-      glowRef.current.intensity = vis * (1.4 + Math.sin(t * 4) * 0.4);
-    }
-  });
-
-  return (
-    <group position={[0, -0.3, 3]}>
-      <mesh position={[0, 0.08, 0]} rotation={[0, 0.4, Math.PI / 2]}>
-        <cylinderGeometry args={[0.05, 0.09, 0.65, 6]} />
-        <meshStandardMaterial color="#2A1505" roughness={0.95} />
-      </mesh>
-      <mesh position={[0, 0.08, 0]} rotation={[0, -0.4, Math.PI / 2]}>
-        <cylinderGeometry args={[0.05, 0.09, 0.65, 6]} />
-        <meshStandardMaterial color="#2A1505" roughness={0.95} />
-      </mesh>
-      <mesh ref={flameRef} position={[0, 0.40, 0]}>
-        <coneGeometry args={[0.13, 0.50, 7]} />
-        <meshStandardMaterial
-          color="#FF5010"
-          emissive="#FF3800"
-          emissiveIntensity={2.5}
-          transparent
-          opacity={0}
-        />
-      </mesh>
-      <pointLight
-        ref={glowRef}
-        position={[0, 0.6, 0]}
-        intensity={0}
-        color="#FF6820"
-        distance={9}
-        decay={2}
-      />
-    </group>
-  );
-};
-
-// ── Lighting ──────────────────────────────────────────────────────────────────
-const Lighting = ({ progress }) => {
-  const sunAngle = -Math.PI * 0.05 + progress * Math.PI * 0.92;
-  const sunX  = Math.cos(sunAngle) * 40;
-  const sunY  = Math.max(1, Math.sin(sunAngle) * 28);
-  const day   = Math.max(0, 1 - progress * 1.55);
-  const dusk  = Math.max(0, Math.sin(progress * Math.PI) * 0.7);
-  const night = Math.max(0, (progress - 0.58) / 0.38);
-
-  return (
-    <>
-      <ambientLight intensity={0.10 + day * 0.35} color="#FFE8C0" />
-      <directionalLight
-        position={[sunX, sunY, -20]}
-        intensity={day * 2.0 + dusk * 0.5}
-        color={progress < 0.35 ? '#FFD060' : progress < 0.65 ? '#FF8030' : '#CC4010'}
-      />
-      <hemisphereLight
-        skyColor={progress < 0.5 ? '#A0C0E0' : '#200A04'}
-        groundColor="#4A3010"
-        intensity={0.20 + day * 0.28 + dusk * 0.18}
-      />
-      <ambientLight intensity={night * 0.08} color="#0C1220" />
-      <directionalLight
-        position={[-40, 55, -60]}
-        intensity={night * 0.38}
-        color="#B0C0F0"
-      />
-    </>
-  );
-};
-
-// ── Root ──────────────────────────────────────────────────────────────────────
 const SceneContent = () => {
   const { progress } = useScrollProgress();
   return (
     <>
-      <fogExp2 attach="fog" args={['#F0BC58', 0.016]} />
-      <Lighting      progress={progress} />
-      <SkyDome       progress={progress} />
-      <Sun           progress={progress} />
-      <Moon          progress={progress} />
-      <Terrain       progress={progress} />
-      <Sand          progress={progress} />
-      <Stars         progress={progress} />
-      <MilkyWay      progress={progress} />
-      <ShootingStars progress={progress} />
-      <Campfire      progress={progress} />
-      <CameraRig     progress={progress} />
+      <fogExp2 attach="fog" args={[NIGHT, 0.018]} />
+      <ambientLight intensity={0.4} color="#2A3450" />
+      <SkyDome />
+      <Afterglow />
+      <Moon />
+      <Terrain />
+      <Sand />
+      <Stars />
+      <CameraRig progress={progress} />
     </>
   );
 };
@@ -698,8 +404,8 @@ export default function Scene() {
         toneMappingExposure: 1.0,
       }}
       onCreated={({ scene }) => {
-        scene.background = new THREE.Color('#F0BC58');
-        scene.fog = new THREE.FogExp2('#F0BC58', 0.016);
+        scene.background = new THREE.Color(NIGHT);
+        scene.fog = new THREE.FogExp2(NIGHT, 0.018);
       }}
       dpr={[1, 1.5]}
     >
