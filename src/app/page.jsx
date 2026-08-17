@@ -1,26 +1,26 @@
-import dynamic from 'next/dynamic';
-import Hero       from '@/components/sections/Hero';
-import About      from '@/components/sections/About';
-import Skills     from '@/components/sections/Skills';
+import Hero from '@/components/sections/Hero';
+import Projects from '@/components/sections/Projects';
+import About from '@/components/sections/About';
+import ProductionLifecycle from '@/components/sections/ProductionLifecycle';
 import Experience from '@/components/sections/Experience';
-import Projects   from '@/components/sections/Projects';
-import Contact    from '@/components/sections/Contact';
+import Skills from '@/components/sections/Skills';
+import FieldNotes from '@/components/sections/FieldNotes';
+import Contact from '@/components/sections/Contact';
 import Navigation from '@/components/ui/Navigation';
-
-// Canvas MUST be dynamically imported — no SSR for WebGL
-const Scene = dynamic(() => import('@/components/canvas/Scene'), { ssr: false });
 
 export default function Home() {
   return (
     <>
-      <Scene />
+      <div className="page-noise" aria-hidden="true" />
       <Navigation />
-      <main className="scroll-container">
+      <main>
         <Hero />
-        <About />
-        <Skills />
-        <Experience />
         <Projects />
+        <About />
+        <ProductionLifecycle />
+        <Experience />
+        <Skills />
+        <FieldNotes />
         <Contact />
       </main>
     </>

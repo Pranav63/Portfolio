@@ -1,0 +1,175 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <title>Pranav Arora — Resume</title>
+  <style>
+    @page { size: A4; margin: 0; }
+    * { box-sizing: border-box; }
+    body { margin: 0; background: #ececec; color: #111; font-family: Arial, Helvetica, sans-serif; font-size: 8.35pt; line-height: 1.26; }
+    .page { width: 210mm; min-height: 297mm; margin: 0 auto 10mm; padding: 11mm 14mm 10mm; background: #fff; page-break-after: always; }
+    .page:last-child { page-break-after: auto; }
+    header { text-align: center; margin-bottom: 5mm; }
+    h1 { margin: 0 0 1.5mm; font-size: 20pt; font-weight: 500; letter-spacing: .01em; }
+    .contact { font-size: 8.3pt; }
+    .contact a { color: inherit; text-decoration: none; }
+    section { margin-top: 3.7mm; }
+    h2 { margin: 0 0 2.1mm; padding-bottom: 1mm; border-bottom: .55pt solid #333; font-size: 11.5pt; font-weight: 700; }
+    .job { margin-bottom: 3.2mm; break-inside: avoid; }
+    .job-head { display: grid; grid-template-columns: 1fr auto; align-items: baseline; column-gap: 5mm; }
+    .job-title { font-size: 9.2pt; font-weight: 700; }
+    .date { font-weight: 700; white-space: nowrap; }
+    .company { margin: .4mm 0 1.2mm; font-weight: 600; }
+    .project-title { margin: 1.6mm 0 .6mm; font-weight: 700; }
+    ul { margin: .7mm 0 0 4.7mm; padding: 0; }
+    li { margin: 0 0 .75mm 0; padding-left: .5mm; }
+    .impact { margin: .8mm 0 0; font-size: 8.1pt; }
+    .impact strong { font-weight: 700; }
+    .education-row { display: grid; grid-template-columns: 1fr auto; gap: 5mm; margin-bottom: 1.4mm; }
+    .skills p, .certs p { margin: 0 0 1.15mm; }
+    .skills strong { font-weight: 700; }
+    .muted { color: #222; }
+    @media screen {
+      body { padding: 10mm 0; }
+      .page { box-shadow: 0 2mm 8mm rgba(0,0,0,.16); }
+    }
+    @media print {
+      body { background: #fff; }
+      .page { margin: 0; box-shadow: none; }
+    }
+  </style>
+</head>
+<body>
+  <article class="page">
+    <header>
+      <h1>Pranav Arora</h1>
+      <div class="contact">
+        <a href="mailto:pranav2vis@gmail.com">pranav2vis@gmail.com</a> · +65 8515 7891 ·
+        <a href="https://www.linkedin.com/in/pranavarora63/">linkedin.com/in/pranavarora63</a> ·
+        <a href="https://pranavarora.vercel.app">pranavarora.vercel.app</a>
+      </div>
+    </header>
+
+    <section>
+      <h2>Experience</h2>
+
+      <div class="job">
+        <div class="job-head">
+          <div class="job-title">Applied AI Scientist</div>
+          <div class="date">Jul 2026 – Present</div>
+        </div>
+        <div class="company">Inception42, a G42 company · Abu Dhabi, UAE</div>
+        <div class="project-title">Machine-Readable Government (MRG) — Policy Intelligence &amp; Compliance</div>
+        <ul>
+          <li>Building a multi-tenant policy-compliance platform that transforms uploaded government policies into machine-readable artifacts and applies them to evidence-backed, reviewable case workflows.</li>
+          <li>Engineering bilingual PDF-to-markdown and policy-graph processing with governed extraction review, versioned provenance, explainable corpus-health checks, and controlled publication.</li>
+          <li>Developing agentic case-processing workflows with evidence retrieval, compliance assessment, human review, configuration pinning, OpenAI Agents SDK sandbox execution, and isolated Docker/AKS worker jobs.</li>
+        </ul>
+        <div class="project-title">Governed Configuration, Evaluation &amp; Release Safety</div>
+        <ul>
+          <li>Building Configuration Studio lifecycles for customer-scoped use cases with versioned drafts, deterministic prompt-safety assessment, approval workflows, audit history, and separate runtime activation.</li>
+          <li>Developing an Eval Workbench with approved ground-truth suites, repeated-run stability measurement, stage-level quality analysis, exact-version release gates, and paired regression comparisons.</li>
+        </ul>
+        <div class="project-title">Enterprise AI Platform Engineering</div>
+        <ul>
+          <li>Delivering the platform with FastAPI, PostgreSQL, React/TypeScript, Microsoft Entra ID, row-level security, Azure/AKS infrastructure, immutable run fencing, and privacy-safe production observability.</li>
+        </ul>
+      </div>
+
+      <div class="job">
+        <div class="job-head">
+          <div class="job-title">Senior ML Engineer — AI Engineering Team</div>
+          <div class="date">Aug 2024 – Jul 2026</div>
+        </div>
+        <div class="company">Hewlett Packard Enterprise · Singapore</div>
+        <div class="project-title">Text-to-SQL AI Platform</div>
+        <ul>
+          <li>Architected a natural-language query platform for 200+ non-technical users across 75+ tables using LangChain, GPT-4o, schema-aware generation, Redis caching, and database access controls.</li>
+          <li>Deployed FastAPI services on HPE Ezmeral Kubernetes with Keycloak SSO, row-level security, Azure AI Foundry model deployments, and team-scoped RBAC.</li>
+        </ul>
+        <p class="impact"><strong>Impact:</strong> 85% query accuracy · 2,000+ queries/week · 7 business units · query time reduced from 10 minutes to 1 minute</p>
+
+        <div class="project-title">K8s Watcher — Agentic Monitoring &amp; Remediation</div>
+        <ul>
+          <li>Designed and deployed an agentic AI system that monitored live Kubernetes state, diagnosed incidents with GPT-4o, and generated context-aware remediation guidance.</li>
+        </ul>
+        <p class="impact"><strong>Impact:</strong> 50+ incidents diagnosed/week · mean time to resolution reduced by 70%</p>
+
+        <div class="project-title">Document Planning Hub &amp; OneAI Platform</div>
+        <ul>
+          <li>Built a LangGraph multi-agent validation service for PDF, PPTX, Excel, and DOCX documents, using specialist agents and an aggregator to produce structured quality reports.</li>
+          <li>Led shared AI engineering standards across eight teams, including CI/CD templates, MLOps patterns, Docker conventions, review practices, and an Azure OpenAI on-call assistant.</li>
+        </ul>
+        <p class="impact"><strong>Impact:</strong> 5,000+ users · document errors reduced by 80% · deployment failures reduced by 60% · time-to-production reduced from 6 weeks to 2 weeks</p>
+
+        <div class="project-title">Real-Time Address Correction</div>
+        <ul>
+          <li>Deployed an Azure-hosted LLM service integrating Google Maps API and Azure OpenAI for high-throughput, sub-second delivery-address correction.</li>
+        </ul>
+        <p class="impact"><strong>Impact:</strong> supply-chain fallouts reduced by 35% · manual interventions reduced by 50%</p>
+      </div>
+    </section>
+  </article>
+
+  <article class="page">
+    <header>
+      <h1>Pranav Arora</h1>
+      <div class="contact">Applied AI Scientist · Abu Dhabi, UAE</div>
+    </header>
+
+    <section>
+      <h2>Experience</h2>
+
+      <div class="job">
+        <div class="job-head">
+          <div class="job-title">Data Scientist — Smart Manufacturing &amp; AI Team</div>
+          <div class="date">Jan 2022 – Aug 2024</div>
+        </div>
+        <div class="company">Micron Technology · Singapore</div>
+        <ul>
+          <li>Optimised semiconductor wafer scheduling using PPO reinforcement-learning agents with Ray RLlib across a 70-machine distributed training cluster, owning design through production deployment.</li>
+          <li>Deployed a recommendation pipeline updating the production UI every two hours and refactored NumPy simulation code to reduce runtime by 60%.</li>
+          <li>Fine-tuned an LLM chatbot on 10K+ internal manufacturing documents, achieving BLEU 0.82 and 80% first-contact resolution.</li>
+          <li>Standardised planning and operations master data, reducing maintenance by 80% and time spent finding metrics by 50%.</li>
+        </ul>
+        <p class="impact"><strong>Impact:</strong> 0.5% wafer-production increase → $10M annual revenue · queueing time reduced by 15%</p>
+      </div>
+
+      <div class="job">
+        <div class="job-head">
+          <div class="job-title">Data Scientist — Data Analytics Team</div>
+          <div class="date">Aug 2020 – Jan 2022</div>
+        </div>
+        <div class="company">Dentsu International · Singapore</div>
+        <ul>
+          <li>Developed an 85%-accuracy customer purchase-propensity model and integrated it into live marketing campaigns.</li>
+          <li>Deployed a data catalogue to Azure AKS with Terraform, ingesting 10,000+ Azure Synapse datasets for enterprise governance.</li>
+          <li>Built ROAS prediction models and dashboards that reduced post-campaign analysis time by 50% and media-planning costs by 20%.</li>
+        </ul>
+      </div>
+    </section>
+
+    <section>
+      <h2>Education</h2>
+      <div class="education-row"><strong>Master of IT in Business — Major: Artificial Intelligence, Singapore Management University</strong><span>Jan 2019 – May 2020</span></div>
+      <div class="education-row"><strong>Bachelor of Computer Science — University of Petroleum and Energy Studies, India</strong><span>Aug 2014 – Apr 2018</span></div>
+    </section>
+
+    <section class="skills">
+      <h2>Skills</h2>
+      <p><strong>Applied AI &amp; Agents:</strong> OpenAI Agents SDK, LangGraph, LangChain, multi-agent orchestration, RAG, GPT-4o, prompt engineering, LangSmith</p>
+      <p><strong>Evaluation &amp; Governance:</strong> LLM-as-judge, RAGAS, release regression, prompt-safety controls, human-in-the-loop review, auditability, MLflow</p>
+      <p><strong>ML &amp; Modeling:</strong> PPO, Ray RLlib, QLoRA/PEFT, PyTorch, TensorFlow, Hugging Face, XGBoost, SHAP/LIME</p>
+      <p><strong>Cloud &amp; Infrastructure:</strong> Azure AI Foundry, Azure OpenAI, AKS, Kubernetes, Docker, Terraform, AWS, GCP, Keycloak, Microsoft Entra ID</p>
+      <p><strong>MLOps &amp; Backend:</strong> FastAPI, PostgreSQL, row-level security, KServe, Prometheus, Grafana, GitHub Actions, Azure DevOps CI/CD</p>
+      <p><strong>Data &amp; Interfaces:</strong> PostgreSQL/pgvector, Qdrant, Redis, Snowflake, Airflow, SQL, Python, React, TypeScript, REST APIs</p>
+    </section>
+
+    <section class="certs">
+      <h2>Certifications &amp; Publications</h2>
+      <p>Harvard Business School Online — Business Analytics</p>
+      <p>Innovations in Software Defined Networking and Network Virtualizations — Publication</p>
+    </section>
+  </article>
+</body>
+</html>
