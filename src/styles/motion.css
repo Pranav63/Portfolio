@@ -76,13 +76,13 @@
 .project-arrow { transform-origin: center; }
 .project-row:hover .project-arrow { transform: translate(4px,4px) rotate(-8deg); }
 
-.proof-grid > a { box-shadow: 0 18px 40px rgba(23,24,26,0); transition: box-shadow .4s; }
-.proof-grid > a:hover { transform: none; box-shadow: 0 18px 40px rgba(23,24,26,.12); }
+.proof-grid > button { box-shadow: 0 18px 40px rgba(23,24,26,0); transition: box-shadow .4s; }
+.proof-grid > button:hover { transform: none; box-shadow: 0 18px 40px rgba(23,24,26,.12); }
 .proof-media { position: relative; overflow: hidden; background: #080a10; }
 .proof-media img { transition: transform .7s cubic-bezier(.22,1,.36,1), opacity .5s; }
 .proof-media > span { position: absolute; right: 14px; bottom: 14px; padding: 8px 11px; background: rgba(12,14,18,.82); color: var(--white); font: .48rem var(--font-mono); letter-spacing: .06em; opacity: 0; transform: translateY(8px); transition: opacity .3s, transform .3s; backdrop-filter: blur(10px); }
-.proof-grid > a:hover .proof-media img { transform: scale(1.025); opacity: .88; }
-.proof-grid > a:hover .proof-media > span { opacity: 1; transform: translateY(0); }
+.proof-grid > button:hover .proof-media img { transform: scale(1.025); opacity: .88; }
+.proof-grid > button:hover .proof-media > span { opacity: 1; transform: translateY(0); }
 
 .practice-body { display: grid; grid-template-columns: minmax(330px, .78fr) minmax(520px, 1.22fr); gap: clamp(60px, 9vw, 130px); align-items: start; }
 .practice-console { position: sticky; top: 102px; min-height: 500px; padding: 22px 0 18px; border-top: 1px solid rgba(245,242,235,.35); border-bottom: 1px solid var(--line-light); }
@@ -131,6 +131,38 @@
 .tools-grid > div:first-child h2, .notes-head h2 { font-size: clamp(2.7rem, 4.05vw, 4.4rem); }
 .contact-copy h2 { font-size: clamp(3rem, 4.8vw, 5.2rem); }
 
+/* Explicit project navigator: all three stay visible; selection never follows the pointer. */
+.project-index {
+  position: sticky;
+  z-index: 32;
+  top: 72px;
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  border-top: 1px solid var(--ink);
+  border-bottom: 1px solid var(--ink);
+  background: rgba(235, 231, 222, .94);
+  backdrop-filter: blur(18px);
+  -webkit-backdrop-filter: blur(18px);
+}
+.project-index .project-row {
+  grid-template-columns: 32px minmax(0, 1fr) 18px;
+  gap: 13px;
+  min-height: 116px;
+  padding: 20px 18px 38px;
+  border-right: 1px solid var(--line-dark);
+  border-bottom: 0;
+}
+.project-index .project-row:last-child { border-right: 0; }
+.project-index .project-row:hover, .project-index .project-row.is-active { padding: 20px 18px 38px; }
+.project-index .project-row-title { min-width: 0; gap: 6px; }
+.project-index .project-row-title strong { font-size: clamp(1.05rem, 1.45vw, 1.35rem); line-height: 1.08; }
+.project-index .project-row-title small { overflow: hidden; font-size: .68rem; line-height: 1.35; text-overflow: ellipsis; white-space: nowrap; }
+.project-index .project-row-proof { position: absolute; bottom: 15px; left: 63px; font: .52rem var(--font-mono); letter-spacing: .02em; }
+.project-index .project-year { display: none; }
+.project-index .project-arrow { align-self: center; }
+.project-title-short { display: none; }
+.project-case-study { scroll-margin-top: 210px; }
+
 @keyframes trace-drift { to { stroke-dashoffset: -180; } }
 @keyframes trace-return { to { stroke-dashoffset: 210; } }
 @keyframes live-pulse { 50% { opacity: .25; transform: scale(.72); } }
@@ -156,6 +188,15 @@
 }
 
 @media (max-width: 760px) {
+  .project-index { top: 66px; }
+  .project-index .project-row { grid-template-columns: 1fr; min-height: 84px; padding: 28px 7px 12px; text-align: center; }
+  .project-index .project-row:hover, .project-index .project-row.is-active { padding: 28px 7px 12px; }
+  .project-index .project-number { position: absolute; top: 10px; left: 9px; }
+  .project-index .project-row-title strong { font-size: .82rem; line-height: 1.15; }
+  .project-index .project-row-title small, .project-index .project-row-proof, .project-index .project-arrow { display: none; }
+  .project-title-long { display: none; }
+  .project-title-short { display: block; }
+  .project-case-study { scroll-margin-top: 168px; }
   .projects-head h2, .about-grid h2, .practice-head h2, .experience-head h2, .tools-grid > div:first-child h2, .notes-head h2 { font-size: clamp(2.35rem, 10vw, 3.4rem); }
   .contact-copy h2 { font-size: clamp(2.65rem, 11vw, 3.8rem); }
   .hero-visual { top: 54px; right: -225px; width: 720px; height: 560px; opacity: .5; }

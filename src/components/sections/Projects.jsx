@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import Image from 'next/image';
 import { AnimatePresence, motion, useReducedMotion } from 'framer-motion';
 import { FaGithub } from 'react-icons/fa';
@@ -8,16 +8,19 @@ import { PROJECTS } from '@/data/portfolio';
 
 const DETAILS = {
   'trading-agent': {
+    nav: 'Trading AI',
     year: '2026',
     flow: ['Financial news', 'AI signal', 'Technical checks', 'Human approval'],
     next: 'Add repeatable backtests and a paper-trading report before making any claim about signal quality or returns.',
   },
   'rag-eval': {
+    nav: 'RAG Eval',
     year: '2026',
     flow: ['Question', 'Search 73 papers', 'Rerank evidence', 'Answer + evaluation'],
     next: 'Commit the raw 10-query results, connect RAGAS to the main dashboard path and build a larger human-reviewed test set.',
   },
   qlora: {
+    nav: 'Arabic QLoRA',
     year: '2026',
     flow: ['7,620 source examples', '653 clean samples', 'QLoRA training', 'Base vs tuned comparison'],
     next: 'Move beyond four prompts with a held-out test set and human ratings for how natural the Arabic-English register feels.',
@@ -26,9 +29,54 @@ const DETAILS = {
 
 export default function Projects() {
   const [active, setActive] = useState(0);
+  const [activeProof, setActiveProof] = useState(null);
+  const [proofZoom, setProofZoom] = useState(.9);
+  const caseStudyRef = useRef(null);
+  const lightboxMediaRef = useRef(null);
   const reducedMotion = useReducedMotion();
   const project = PROJECTS[active];
   const detail = DETAILS[project.id];
+
+  useEffect(() => {
+    if (!activeProof) return undefined;
+
+    const previousOverflow = document.body.style.overflow;
+    const closeOnEscape = (event) => {
+      if (event.key === 'Escape') setActiveProof(null);
+    };
+
+    document.body.style.overflow = 'hidden';
+    window.addEventListener('keydown', closeOnEscape);
+
+    window.requestAnimationFrame(() => {
+      const media = lightboxMediaRef.current;
+      if (media) media.scrollLeft = (media.scrollWidth - media.clientWidth) / 2;
+    });
+
+    return () => {
+      document.body.style.overflow = previousOverflow;
+      window.removeEventListener('keydown', closeOnEscape);
+    };
+  }, [activeProof]);
+
+  const openProof = (proof) => {
+    setProofZoom(.9);
+    setActiveProof(proof);
+  };
+
+  const changeProofZoom = (amount) => {
+    setProofZoom((current) => Math.min(2, Math.max(.8, current + amount)));
+  };
+
+  const selectProject = (index) => {
+    if (index === active) return;
+    setActive(index);
+    window.requestAnimationFrame(() => {
+      if (window.scrollY > document.getElementById("projects")?.offsetTop + 260) {
+        caseStudyRef.current?.scrollIntoView({ behavior: "smooth", block: "start" });
+      }
+    });
+  };
 
   const trackPointer = (event) => {
     const bounds = event.currentTarget.getBoundingClientRect();
@@ -51,15 +99,13 @@ export default function Projects() {
               type="button"
               className={'project-row' + (index === active ? ' is-active' : '')}
               key={item.id}
-              onClick={() => setActive(index)}
-              onMouseEnter={() => setActive(index)}
+              onClick={() => selectProject(index)}
               onPointerMove={trackPointer}
-              onFocus={() => setActive(index)}
               aria-pressed={index === active}
             >
               {index === active && <motion.span className="project-row-active" layoutId="project-row-active" transition={{ type: 'spring', stiffness: 190, damping: 27 }} />}
               <span className="project-number">0{index + 1}</span>
-              <span className="project-row-title"><strong>{item.title}</strong><small>{item.subtitle}</small></span>
+              <span className="project-row-title"><strong><span className="project-title-long">{item.title}</span><span className="project-title-short">{DETAILS[item.id].nav}</span></strong><small>{item.subtitle}</small></span>
               <span className="project-row-proof">{item.metrics[0]}</span>
               <span className="project-year">{DETAILS[item.id].year}</span>
               <span className="project-arrow">↘</span>
@@ -70,6 +116,7 @@ export default function Projects() {
         <AnimatePresence mode="wait">
           <motion.article
             key={project.id}
+            ref={caseStudyRef}
             className="project-case-study"
             initial={reducedMotion ? false : { opacity: 0, y: 18, clipPath: 'inset(0 0 8% 0)' }}
             animate={{ opacity: 1, y: 0, clipPath: 'inset(0 0 0% 0)' }}
@@ -98,12 +145,20 @@ export default function Projects() {
                 <div className="proof-heading"><p className="case-label">Saved results</p><p>These images are committed with the project, so the evidence remains visible even when no demo is hosted.</p></div>
                 <div className="proof-grid">
                   {project.proofs.map((proof) => (
-                    <a href={proof.src} target="_blank" rel="noreferrer" key={proof.src}>
-                      <motion.figure initial={{ opacity: 0, y: 18 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true, margin: '-80px' }} whileHover={reducedMotion ? undefined : { y: -5 }} transition={{ duration: .38 }}>
-                        <div className="proof-media"><Image src={proof.src} width={proof.width} height={proof.height} alt={proof.alt} sizes="(max-width: 760px) 94vw, 50vw" /><span>Open evidence ↗</span></div>
-                        <figcaption>{proof.caption}<span>View full size ↗</span></figcaption>
-                      </motion.figure>
-                    </a>
+                    <motion.button
+                      type="button"
+                      onClick={() => openProof(proof)}
+                      aria-label={`Open full-size image: ${proof.alt}`}
+                      key={proof.src}
+                      initial={{ opacity: 0, y: 18 }}
+                      whileInView={{ opacity: 1, y: 0 }}
+                      viewport={{ once: true, margin: '-80px' }}
+                      whileHover={reducedMotion ? undefined : { y: -5 }}
+                      transition={{ duration: .38 }}
+                    >
+                      <div className="proof-media"><Image src={proof.src} width={proof.width} height={proof.height} alt={proof.alt} sizes="(max-width: 760px) 94vw, 50vw" /><span>Open evidence +</span></div>
+                      <span className="proof-caption">{proof.caption}<span>View full size +</span></span>
+                    </motion.button>
                   ))}
                 </div>
               </div>
@@ -118,6 +173,46 @@ export default function Projects() {
 
             <div className="case-next"><p className="case-label">What I would improve next</p><p>{detail.next}</p></div>
           </motion.article>
+        </AnimatePresence>
+
+        <AnimatePresence>
+          {activeProof && (
+            <motion.div
+              className="image-lightbox"
+              role="dialog"
+              aria-modal="true"
+              aria-label={activeProof.alt}
+              initial={reducedMotion ? false : { opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              onMouseDown={(event) => {
+                if (event.target === event.currentTarget) setActiveProof(null);
+              }}
+            >
+              <motion.div
+                className="image-lightbox-content"
+                initial={reducedMotion ? false : { opacity: 0, scale: .96, y: 16 }}
+                animate={{ opacity: 1, scale: 1, y: 0 }}
+                exit={{ opacity: 0, scale: .98, y: 8 }}
+                transition={{ duration: .3, ease: [0.22, 1, 0.36, 1] }}
+              >
+                <div className="image-lightbox-toolbar">
+                  <div className="image-lightbox-zoom" aria-label="Image zoom controls">
+                    <button type="button" onClick={() => changeProofZoom(-.1)} disabled={proofZoom <= .8} aria-label="Zoom out">−</button>
+                    <button type="button" className="image-lightbox-zoom-value" onClick={() => setProofZoom(1)} aria-label="Fit image to viewer">{Math.round(proofZoom * 100)}%</button>
+                    <button type="button" onClick={() => changeProofZoom(.1)} disabled={proofZoom >= 2} aria-label="Zoom in">+</button>
+                  </div>
+                  <button type="button" className="image-lightbox-close" onClick={() => setActiveProof(null)} aria-label="Close full-size image" autoFocus>Close ×</button>
+                </div>
+                <div className="image-lightbox-media" ref={lightboxMediaRef}>
+                  <div className="image-lightbox-stage" style={{ width: `${proofZoom * 100}%` }}>
+                    <Image src={activeProof.src} width={activeProof.width} height={activeProof.height} alt={activeProof.alt} sizes="100vw" priority />
+                  </div>
+                </div>
+                <p>{activeProof.caption}</p>
+              </motion.div>
+            </motion.div>
+          )}
         </AnimatePresence>
       </div>
     </section>
