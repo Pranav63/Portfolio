@@ -1,4 +1,5 @@
 import { Fraunces, Space_Grotesk, Space_Mono, IBM_Plex_Sans_Arabic } from 'next/font/google';
+import SmoothScroll from '@/components/ui/SmoothScroll';
 import '@/styles/globals.css';
 import '@/styles/motion.css';
 
@@ -16,7 +17,7 @@ export default function RootLayout({ children }) {
   return (
     <html lang="en" className={`${fraunces.variable} ${grotesk.variable} ${mono.variable} ${plexArabic.variable}`}>
       <head><meta name="color-scheme" content="dark" /></head>
-      <body>{children}</body>
+      <body><SmoothScroll>{children}</SmoothScroll></body>
     </html>
   );
 }

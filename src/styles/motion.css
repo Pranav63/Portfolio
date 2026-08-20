@@ -55,7 +55,6 @@
 .field-stage-list button span { color: rgba(245,242,235,.2); }
 .field-stage-list button.is-active { color: var(--white); transform: translateX(3px); }
 .field-stage-list button.is-active span { color: var(--gold); }
-.field-legend { position: absolute; z-index: 4; right: 34px; bottom: 46px; width: 268px; padding-top: 12px; border-top: 1px solid var(--line-light); color: rgba(245,242,235,.4); font: .5rem/1.55 var(--font-mono); }
 
 .hero-heading { position: relative; z-index: 5; text-wrap: balance; }
 .hero-intro { position: relative; z-index: 5; }
@@ -88,19 +87,20 @@
 .practice-console { position: sticky; top: 102px; min-height: 500px; padding: 22px 0 18px; border-top: 1px solid rgba(245,242,235,.35); border-bottom: 1px solid var(--line-light); }
 .console-top { display: flex; justify-content: space-between; align-items: center; color: rgba(245,242,235,.42); font: .5rem var(--font-mono); letter-spacing: .09em; text-transform: uppercase; }
 .console-top > span:first-child { display: flex; gap: 8px; align-items: center; }
-.practice-console svg { display: block; width: 100%; margin: 24px 0 6px; overflow: visible; }
+.practice-console > svg { display: block; width: 100%; margin: 24px 0 6px; overflow: visible; }
 .console-grid-line { fill: none; stroke: rgba(245,242,235,.07); stroke-width: 1; }
 .console-wave { fill: none; stroke: var(--cyan); stroke-width: 2; filter: drop-shadow(0 0 7px rgba(105,190,184,.22)); }
 .console-scan { stroke: var(--gold); stroke-width: 1; stroke-dasharray: 3 5; opacity: .72; }
 .console-copy { min-height: 118px; padding-top: 19px; border-top: 1px solid var(--line-light); }
 .console-copy small { display: block; margin-bottom: 9px; color: rgba(245,242,235,.35); font: .49rem var(--font-mono); letter-spacing: .09em; text-transform: uppercase; }
-.console-copy strong { display: block; font-family: var(--font-display); font-size: 2.6rem; font-weight: 420; line-height: 1; }
+.console-copy strong { display: flex; gap: 12px; align-items: center; font-family: var(--font-display); font-size: 2.6rem; font-weight: 420; line-height: 1; }
+.console-copy strong svg { width: 26px; height: 26px; margin: 0; flex-shrink: 0; color: var(--gold); }
 .console-copy p { margin-top: 9px; color: var(--gold); font: .56rem var(--font-mono); }
 .console-progress { display: grid; grid-template-columns: repeat(6, 1fr); gap: 6px; margin-top: 20px; }
 .console-progress button { height: 18px; padding: 8px 0; border: 0; background: transparent; cursor: pointer; }
 .console-progress button span { display: block; height: 2px; background: rgba(245,242,235,.12); transition: background .35s, transform .35s; transform-origin: left; }
 .console-progress button.is-active span { background: var(--gold); transform: scaleY(1.5); }
-.console-note { margin-top: 20px; color: rgba(245,242,235,.36); font: .5rem/1.6 var(--font-mono); }
+.console-note { margin-top: 20px; color: rgba(245,242,235,.58); font: .5rem/1.6 var(--font-mono); }
 .practice-body .practice-list { border-top-color: rgba(245,242,235,.26); }
 .practice-body .practice-list article { position: relative; isolation: isolate; grid-template-columns: 38px 1fr; gap: 22px; min-height: 270px; padding: 39px 26px 38px 10px; overflow: hidden; transition: color .35s; }
 .practice-active { position: absolute; z-index: -1; inset: 0; background: linear-gradient(110deg, rgba(105,190,184,.075), rgba(226,181,92,.035) 58%, transparent); border-left: 2px solid var(--gold); }
@@ -108,6 +108,7 @@
 .practice-body .practice-list dl { grid-column: 2; grid-template-columns: 1fr 1fr; margin-top: 14px; }
 .practice-body .practice-list article:not(.is-active) { color: rgba(245,242,235,.72); }
 .practice-body .practice-list article:not(.is-active) .practice-copy > p:last-child { color: rgba(245,242,235,.52); }
+.practice-body .practice-list article:not(.is-active) .practice-icon { opacity: .32; }
 
 .experience-list article, .tools-list article, .notes-list article { position: relative; transition: padding .4s cubic-bezier(.22,1,.36,1), background .35s; }
 .experience-list article:hover { padding-left: 16px; padding-right: 16px; background: linear-gradient(90deg, rgba(105,190,184,.055), transparent); }
@@ -183,7 +184,7 @@
 
 @media (max-width: 1100px) {
   .hero-visual { right: -150px; width: 66vw; opacity: .72; }
-  .field-readout, .field-legend { right: 80px; }
+  .field-readout { right: 80px; }
   .practice-body { grid-template-columns: 300px minmax(0,1fr); gap: 50px; }
 }
 
@@ -205,14 +206,14 @@
   .field-readout { top: 42px; left: 140px; right: auto; width: 220px; }
   .field-readout-copy { min-height: 105px; }
   .field-readout-copy strong { font-size: 1.65rem; }
-  .field-stage-list, .field-legend { display: none; }
+  .field-stage-list { display: none; }
   .hero-content { z-index: 5; }
   .hero-intro { width: calc(100vw - 28px); max-width: calc(100vw - 28px); overflow: hidden; }
   .hero-intro > p { width: 100%; max-width: 100%; white-space: normal; overflow-wrap: break-word; }
   .hero-heading { text-shadow: 0 2px 24px rgba(12,14,18,.82); }
   .practice-body { grid-template-columns: 1fr; gap: 34px; }
   .practice-console { position: relative; top: auto; min-height: 365px; }
-  .practice-console svg { margin-block: 12px 0; }
+  .practice-console > svg { margin-block: 12px 0; }
   .console-copy strong { font-size: 2.1rem; }
   .practice-body .practice-list article { min-height: 0; padding: 30px 12px 30px 7px; }
   .practice-body .practice-list dl { grid-template-columns: 1fr; }

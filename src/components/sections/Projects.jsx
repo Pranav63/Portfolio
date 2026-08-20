@@ -3,6 +3,7 @@
 import { useEffect, useRef, useState } from 'react';
 import Image from 'next/image';
 import { AnimatePresence, motion, useReducedMotion } from 'framer-motion';
+import { useLenis } from 'lenis/react';
 import { FaGithub } from 'react-icons/fa';
 import { PROJECTS } from '@/data/portfolio';
 
@@ -28,6 +29,7 @@ const DETAILS = {
 };
 
 export default function Projects() {
+  const lenis = useLenis();
   const [active, setActive] = useState(0);
   const [activeProof, setActiveProof] = useState(null);
   const [proofZoom, setProofZoom] = useState(.9);
@@ -73,7 +75,8 @@ export default function Projects() {
     setActive(index);
     window.requestAnimationFrame(() => {
       if (window.scrollY > document.getElementById("projects")?.offsetTop + 260) {
-        caseStudyRef.current?.scrollIntoView({ behavior: "smooth", block: "start" });
+        if (lenis) lenis.scrollTo(caseStudyRef.current, { block: 'start' });
+        else caseStudyRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' });
       }
     });
   };
@@ -89,7 +92,7 @@ export default function Projects() {
       <div className="page-shell">
         <header className="projects-head">
           <p className="section-label">Selected work</p>
-          <h2>Things I built to understand where AI becomes useful—and where it breaks.</h2>
+          <h2>Things I built to understand where AI becomes useful, and where it breaks.</h2>
           <p>Three personal projects, explained without pretending they are larger or more proven than they are.</p>
         </header>
 

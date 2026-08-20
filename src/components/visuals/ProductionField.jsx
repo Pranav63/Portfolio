@@ -97,8 +97,6 @@ export default function ProductionField() {
           ))}
         </div>
       </div>
-
-      <p className="field-legend">Signals move through quality and risk gates before release. Monitoring sends evidence back to the next iteration.</p>
     </div>
   );
 }

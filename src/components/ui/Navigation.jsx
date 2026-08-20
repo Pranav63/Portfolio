@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from 'react';
 import { AnimatePresence, motion } from 'framer-motion';
+import { useLenis } from 'lenis/react';
 
 const LINKS = [
   ['Work', 'projects'],
@@ -12,6 +13,7 @@ const LINKS = [
 ];
 
 export default function Navigation() {
+  const lenis = useLenis();
   const [open, setOpen] = useState(false);
   const [compact, setCompact] = useState(false);
   const [active, setActive] = useState('hero');
@@ -44,12 +46,15 @@ export default function Navigation() {
 
   const goTo = (id) => {
     setOpen(false);
-    document.getElementById(id)?.scrollIntoView({ behavior: 'smooth' });
+    const target = document.getElementById(id);
+    if (!target) return;
+    if (lenis) lenis.scrollTo(target);
+    else target.scrollIntoView();
   };
 
   return (
     <motion.header className={`site-header${compact ? ' is-compact' : ''}`} initial={{ opacity: 0, y: -16 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: .65 }}>
-      <button className="brand" type="button" onClick={() => window.scrollTo({ top: 0, behavior: 'smooth' })}>
+      <button className="brand" type="button" onClick={() => (lenis ? lenis.scrollTo(0) : window.scrollTo(0, 0))}>
         <strong>Pranav Arora</strong><span>Applied AI Scientist</span>
       </button>
 

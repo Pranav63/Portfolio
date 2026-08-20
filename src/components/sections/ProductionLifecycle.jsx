@@ -2,14 +2,15 @@
 
 import { useState } from 'react';
 import { AnimatePresence, motion } from 'framer-motion';
+import { Target, Wrench, MagnifyingGlass, ShieldCheck, Rocket, ArrowsClockwise } from '@phosphor-icons/react';
 
 const STAGES = [
-  { name: 'Frame', verb: 'Define the decision', description: 'Turn an ambiguous AI request into users, constraints, failure modes and a measurable definition of success.', output: 'System brief + risk map', signal: 'Success criteria' },
-  { name: 'Build', verb: 'Make behaviour visible', description: 'Create the smallest traceable model or agent workflow that can expose assumptions before the architecture hardens.', output: 'Traceable baseline', signal: 'Execution traces' },
-  { name: 'Evaluate', verb: 'Test what matters', description: 'Measure task quality, grounding and robustness against representative scenarios—not only a polished happy path.', output: 'Evaluation report', signal: 'Quality thresholds' },
-  { name: 'Guard', verb: 'Design safe failure', description: 'Add permissions, validation, fallbacks and human escalation where model uncertainty meets operational risk.', output: 'Safety contract', signal: 'Failure coverage' },
-  { name: 'Deploy', verb: 'Engineer the service', description: 'Package inference and orchestration behind observable APIs with repeatable release and rollback paths.', output: 'Release candidate', signal: 'Latency + reliability' },
-  { name: 'Operate', verb: 'Close the loop', description: 'Watch quality, cost, drift and incidents in production, then feed real behaviour into the next evaluation cycle.', output: 'Production signal', signal: 'Cost + drift' },
+  { name: 'Frame', verb: 'Define the decision', description: 'Turn an ambiguous AI request into users, constraints, failure modes and a measurable definition of success.', output: 'System brief + risk map', signal: 'Success criteria', Icon: Target },
+  { name: 'Build', verb: 'Make behaviour visible', description: 'Build the smallest traceable workflow that exposes assumptions before the architecture hardens.', output: 'Traceable baseline', signal: 'Execution traces', Icon: Wrench },
+  { name: 'Evaluate', verb: 'Test what matters', description: 'Measure task quality, grounding and robustness against representative scenarios, not only a polished happy path.', output: 'Evaluation report', signal: 'Quality thresholds', Icon: MagnifyingGlass },
+  { name: 'Guard', verb: 'Design safe failure', description: 'Add permissions, validation, fallbacks and human escalation where model uncertainty meets operational risk.', output: 'Safety contract', signal: 'Failure coverage', Icon: ShieldCheck },
+  { name: 'Deploy', verb: 'Engineer the service', description: 'Package inference and orchestration behind observable APIs with repeatable release and rollback paths.', output: 'Release candidate', signal: 'Latency + reliability', Icon: Rocket },
+  { name: 'Operate', verb: 'Close the loop', description: 'Watch quality, cost, drift and incidents in production, feeding results into the next evaluation cycle.', output: 'Production signal', signal: 'Cost + drift', Icon: ArrowsClockwise },
 ];
 
 export default function ProductionLifecycle() {
@@ -24,7 +25,7 @@ export default function ProductionLifecycle() {
             <p className="section-label">How I work</p>
             <h2 id="practice-title">The work between a promising model and a dependable system.</h2>
           </div>
-          <p>This is the part of applied AI I care about most—six stages I move through on every project, in roughly this order.</p>
+          <p>This is the part of applied AI I care about most, six stages I move through on most projects.</p>
         </header>
 
         <div className="practice-body">
@@ -38,7 +39,7 @@ export default function ProductionLifecycle() {
             <AnimatePresence mode="wait">
               <motion.div className="console-copy" key={current.name} initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -8 }} transition={{ duration: .26 }}>
                 <small>Current stage</small>
-                <strong>{current.name}</strong>
+                <strong><current.Icon size={26} weight="light" aria-hidden="true" />{current.name}</strong>
                 <p>{current.output}</p>
               </motion.div>
             </AnimatePresence>
@@ -62,7 +63,12 @@ export default function ProductionLifecycle() {
               >
                 {active === index && <motion.i className="practice-active" layoutId="practice-active" transition={{ type: 'spring', stiffness: 180, damping: 26 }} />}
                 <span>0{index + 1}</span>
-                <div className="practice-copy"><p>{stage.name}</p><h3>{stage.verb}</h3><p>{stage.description}</p></div>
+                <div className="practice-copy">
+                  <stage.Icon className="practice-icon" size={22} weight="light" aria-hidden="true" />
+                  <p className="practice-label">{stage.name}</p>
+                  <h3>{stage.verb}</h3>
+                  <p>{stage.description}</p>
+                </div>
                 <dl><div><dt>Working output</dt><dd>{stage.output}</dd></div><div><dt>Evidence I watch</dt><dd>{stage.signal}</dd></div></dl>
               </motion.article>
             ))}

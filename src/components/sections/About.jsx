@@ -14,14 +14,13 @@ export default function About() {
     <section id="about" className="about-section">
       <div className="page-shell">
         <div className="about-grid">
-          <div>
-            <p className="section-label">About</p>
+          <motion.div initial={{ opacity: 0, y: 20 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true, margin: '-80px' }} transition={{ duration: .6 }}>
             <h2>From optimising factories in Singapore to building applied AI in Abu Dhabi.</h2>
-          </div>
+          </motion.div>
           <div className="about-story">
-            <p>I started in analytics at Dentsu, moved closer to real-world operations at Micron, and then built enterprise AI systems at Hewlett Packard Enterprise.</p>
-            <p>Today I&apos;m an Applied AI Scientist at Inception, a G42 company. That path changed what I care about: not only whether a model can work, but whether a team can understand it, evaluate it and trust it when the stakes are real.</p>
-            <p className="about-note">The move from Singapore to Abu Dhabi was also a personal reset—a chance to work on ambitious AI problems while carrying forward the production discipline I learned in manufacturing and enterprise software.</p>
+            <motion.p initial={{ opacity: 0, y: 18 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true, margin: '-80px' }} transition={{ duration: .55, delay: .05 }}>I started in analytics at Dentsu, moved closer to real-world operations at Micron, and then built enterprise AI systems at Hewlett Packard Enterprise.</motion.p>
+            <motion.p initial={{ opacity: 0, y: 18 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true, margin: '-80px' }} transition={{ duration: .55, delay: .12 }}>Today I&apos;m an Applied AI Scientist at Inception, a G42 company. That path changed what I care about: not just whether a model works, but whether a team can trust it when the stakes are real.</motion.p>
+            <motion.p className="about-note" initial={{ opacity: 0, y: 18 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true, margin: '-80px' }} transition={{ duration: .55, delay: .19 }}>The move from Singapore to Abu Dhabi was also a personal reset, a chance to work on ambitious AI problems while carrying forward the production discipline I learned in manufacturing and enterprise software.</motion.p>
           </div>
         </div>
 

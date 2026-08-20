@@ -7,19 +7,19 @@ const NOTES = [
     index: '01',
     project: 'RAG evaluation',
     title: 'A demo shows what can happen. An evaluation shows how often.',
-    detail: 'That is why I keep retrieval evidence, response time and answer-quality results visible instead of hiding them behind one polished query.',
+    detail: 'That is why retrieval evidence, response time and answer quality stay visible, instead of hiding behind one polished query.',
   },
   {
     index: '02',
     project: 'Trading agent',
     title: 'Risk controls belong inside the product, not in the footnotes.',
-    detail: 'Human approval, exposure limits and a kill switch are part of the system behaviour—not cleanup added after the model is connected.',
+    detail: 'Human approval, exposure limits and a kill switch are part of the system, not cleanup bolted on afterward.',
   },
   {
     index: '03',
     project: 'QLoRA fine-tuning',
     title: 'Small experiments need clearer comparisons, not larger claims.',
-    detail: 'A stored base-versus-tuned comparison is more useful than a vague quality claim, and it makes the next evaluation gap obvious.',
+    detail: 'A stored base-versus-tuned comparison beats a vague quality claim, and it makes the next evaluation gap obvious.',
   },
 ];
 
@@ -44,7 +44,7 @@ export default function FieldNotes() {
               <span>{note.index}</span>
               <div>
                 <p>{note.project}</p>
-                <h3>{note.title}</h3>
+                <h3><span className="note-quote" aria-hidden="true">&ldquo;</span>{note.title}</h3>
               </div>
               <p>{note.detail}</p>
             </motion.article>
