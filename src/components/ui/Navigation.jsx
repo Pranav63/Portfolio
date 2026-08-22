@@ -7,7 +7,6 @@ import { useLenis } from 'lenis/react';
 const LINKS = [
   ['Work', 'projects'],
   ['About', 'about'],
-  ['Practice', 'practice'],
   ['Experience', 'experience'],
   ['Contact', 'contact'],
 ];

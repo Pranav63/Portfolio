@@ -1,12 +1,16 @@
-import { Fraunces, Space_Grotesk, Space_Mono, IBM_Plex_Sans_Arabic } from 'next/font/google';
+import { Inter } from 'next/font/google';
 import SmoothScroll from '@/components/ui/SmoothScroll';
 import '@/styles/globals.css';
 import '@/styles/motion.css';
 
-const fraunces = Fraunces({ subsets: ['latin'], axes: ['SOFT', 'WONK', 'opsz'], variable: '--font-fraunces' });
-const grotesk = Space_Grotesk({ subsets: ['latin'], variable: '--font-grotesk' });
-const mono = Space_Mono({ subsets: ['latin'], weight: ['400', '700'], variable: '--font-space-mono' });
-const plexArabic = IBM_Plex_Sans_Arabic({ subsets: ['arabic'], weight: ['400', '600'], variable: '--font-plex-arabic' });
+// Single typeface across every UI context, the way the reference system works:
+// hierarchy comes from scale and tracking, not from weight.
+const inter = Inter({
+  subsets: ['latin'],
+  weight: ['200', '300', '400', '500', '600'],
+  variable: '--font-sans',
+  display: 'swap',
+});
 
 export const metadata = {
   title: 'Pranav Arora | Applied AI Scientist',
@@ -15,7 +19,7 @@ export const metadata = {
 
 export default function RootLayout({ children }) {
   return (
-    <html lang="en" className={`${fraunces.variable} ${grotesk.variable} ${mono.variable} ${plexArabic.variable}`}>
+    <html lang="en" className={inter.variable}>
       <head><meta name="color-scheme" content="dark" /></head>
       <body><SmoothScroll>{children}</SmoothScroll></body>
     </html>
