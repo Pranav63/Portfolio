@@ -8,8 +8,11 @@ const LINKS = [
   ['Work', 'projects'],
   ['About', 'about'],
   ['Experience', 'experience'],
+  ['Capabilities', 'skills'],
   ['Contact', 'contact'],
 ];
+
+const CHAPTERS = [['Overview', 'hero'], ...LINKS];
 
 export default function Navigation() {
   const lenis = useLenis();
@@ -52,7 +55,8 @@ export default function Navigation() {
   };
 
   return (
-    <motion.header className={`site-header${compact ? ' is-compact' : ''}`} initial={{ opacity: 0, y: -16 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: .65 }}>
+    <>
+      <motion.header className={`site-header${compact ? ' is-compact' : ''}`} initial={{ opacity: 0, y: -16 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: .65 }}>
       <button className="brand" type="button" onClick={() => (lenis ? lenis.scrollTo(0) : window.scrollTo(0, 0))}>
         <strong>Pranav Arora</strong><span>Applied AI Scientist</span>
       </button>
@@ -77,6 +81,25 @@ export default function Navigation() {
           </motion.nav>
         )}
       </AnimatePresence>
-    </motion.header>
+      </motion.header>
+
+      <nav className="chapter-rail" aria-label="Page chapters">
+        <span className="chapter-rail-label">Index</span>
+        {CHAPTERS.map(([label, id], index) => (
+          <button
+            type="button"
+            className={active === id ? 'is-active' : ''}
+            key={id}
+            onClick={() => goTo(id)}
+            aria-current={active === id ? 'location' : undefined}
+            aria-label={'Go to ' + label}
+          >
+            <span>{String(index).padStart(2, '0')}</span>
+            <i />
+            <strong>{label}</strong>
+          </button>
+        ))}
+      </nav>
+    </>
   );
 }

@@ -6,9 +6,11 @@ import { EffectComposer, Bloom } from '@react-three/postprocessing';
 import * as THREE from 'three';
 
 const COUNT = 3200;
-const SHAPE_COUNT = 5;
-const SPECTRUM = ['#8052ff', '#ffb829', '#15846e', '#ffffff', '#5b7cff', '#c86bff'].map((color) => new THREE.Color(color));
-const SPECTRUM_WEIGHTS = [0.32, 0.2, 0.1, 0.18, 0.12, 0.08];
+const SHAPE_COUNT = 6;
+const LINE_COUNT = 180;
+const PROJECT_CENTRES = [[-1.72, .92], [1.72, .92], [0, -1.48]];
+const SPECTRUM = ['#8052ff', '#ffb829', '#ffffff', '#2aa58c'].map((color) => new THREE.Color(color));
+const SPECTRUM_WEIGHTS = [0.4, 0.22, 0.28, 0.1];
 
 function seededRandom(seed) {
   let value = seed >>> 0;
@@ -324,6 +326,95 @@ function buildBulb(ctx) {
   return points;
 }
 
+function buildPipelineAtlas() {
+  const random = seededRandom(101);
+  const points = new Float32Array(COUNT * 3);
+  const perStage = COUNT / 4;
+  const vertical = [.34, -.24, .2, -.12];
+  const spread = [.76, .62, .68, .8];
+  for (let i = 0; i < COUNT; i++) {
+    const stage = Math.floor(i / perStage);
+    const local = i % perStage;
+    const angle = random() * Math.PI * 2;
+    const latitude = random() * 2 - 1;
+    const shell = Math.cbrt(random()) * spread[stage] * (local < 100 ? .34 : 1);
+    const radial = Math.sqrt(1 - latitude * latitude) * shell;
+    setPoint(points, i,
+      -2.35 + stage * 1.55 + Math.cos(angle) * radial * .62,
+      vertical[stage] + latitude * shell,
+      Math.sin(angle) * radial);
+  }
+  return points;
+}
+
+function buildProjectAtlas() {
+  const random = seededRandom(113);
+  const points = new Float32Array(COUNT * 3);
+  const perCluster = COUNT / 3;
+  for (let i = 0; i < COUNT; i++) {
+    const cluster = Math.min(2, Math.floor(i / perCluster));
+    const local = i - Math.floor(cluster * perCluster);
+    const angle = local / perCluster * Math.PI * 2;
+    const ring = local % 4;
+    const radius = .34 + ring * .14 + random() * .08;
+    setPoint(points, i,
+      PROJECT_CENTRES[cluster][0] + Math.cos(angle) * radius,
+      PROJECT_CENTRES[cluster][1] + Math.sin(angle) * radius,
+      Math.sin(angle * 2 + cluster) * .38 + (random() - .5) * .14);
+  }
+  return points;
+}
+
+function buildReliabilityAtlas() {
+  const random = seededRandom(127);
+  const points = new Float32Array(COUNT * 3);
+  const perLane = COUNT / 4;
+  for (let i = 0; i < COUNT; i++) {
+    const lane = Math.floor(i / perLane);
+    const local = i % perLane;
+    const progress = local / (perLane - 1);
+    const x = -3 + progress * 6;
+    setPoint(points, i, x, 1.42 - lane * .94 + Math.sin(progress * Math.PI * 8 + lane) * .055,
+      Math.sin(progress * Math.PI * 6 + lane * 1.3) * .28 + (random() - .5) * .08);
+  }
+  return points;
+}
+
+function buildCapabilityAtlas() {
+  const random = seededRandom(139);
+  const points = new Float32Array(COUNT * 3);
+  const perLayer = COUNT / 5;
+  for (let i = 0; i < COUNT; i++) {
+    const layer = Math.floor(i / perLayer);
+    const local = i % perLayer;
+    const angle = local / perLayer * Math.PI * 2 + layer * .16;
+    const radius = .78 + layer * .4 + (random() - .5) * .05;
+    setPoint(points, i, Math.cos(angle) * radius, (layer - 2) * .36 + Math.sin(angle * 2) * .1,
+      Math.sin(angle) * radius * .7);
+  }
+  return points;
+}
+
+function buildStableAtlas() {
+  const random = seededRandom(151);
+  const points = new Float32Array(COUNT * 3);
+  const core = 520;
+  for (let i = 0; i < COUNT; i++) {
+    if (i < core) {
+      const angle = i / core * Math.PI * 2;
+      const radius = .18 + (i % 5) * .045 + random() * .035;
+      setPoint(points, i, Math.cos(angle) * radius, Math.sin(angle) * radius, (random() - .5) * .3);
+      continue;
+    }
+    const progress = (i - core) / (COUNT - core);
+    const angle = progress * Math.PI * 5.2;
+    const radius = .68 + progress * 2.2;
+    setPoint(points, i, Math.cos(angle) * radius, Math.sin(angle) * radius * .58,
+      (progress - .5) * 1.25 + (random() - .5) * .08);
+  }
+  return points;
+}
+
 function buildOrbit() {
   const random = seededRandom(59);
   const points = new Float32Array(COUNT * 3);
@@ -418,20 +509,37 @@ function buildTriangleTexture() {
   return new THREE.CanvasTexture(canvas);
 }
 
-function ParticleSwarm({ progress, pointer, scrollVelocity }) {
+function ParticleSwarm({ progress, pointer, projectFocus, scrollVelocity }) {
   const geometryRef = useRef(null);
+  const lineGeometryRef = useRef(null);
+  const lineMaterialRef = useRef(null);
   const groupRef = useRef(null);
   const materialRef = useRef(null);
   const current = useRef(null);
   const globeSpin = useRef(0);
   const scaleTarget = useMemo(() => new THREE.Vector3(1, 1, 1), []);
   const { viewport } = useThree();
-  const shapes = useMemo(() => {
-    const ctx = makeSampler();
-    return [buildBrain(ctx), buildDeployment(), buildGlobe(), buildBulb(ctx), buildOrbit()].map(orderShape);
-  }, []);
+  const shapes = useMemo(() => [
+    buildPipelineAtlas(),
+    buildProjectAtlas(),
+    buildGlobe(),
+    buildReliabilityAtlas(),
+    buildCapabilityAtlas(),
+    buildStableAtlas(),
+  ].map(orderShape), []);
+  const projectAssignment = useMemo(() => Array.from({ length: COUNT }, (_, particle) => {
+    const offset = particle * 3;
+    let closest = 0;
+    let distance = Infinity;
+    PROJECT_CENTRES.forEach(([x, y], cluster) => {
+      const next = Math.hypot(shapes[1][offset] - x, shapes[1][offset + 1] - y);
+      if (next < distance) { closest = cluster; distance = next; }
+    });
+    return closest;
+  }), [shapes]);
   const blast = useMemo(() => buildBlastField(shapes[0]), [shapes]);
   const texture = useMemo(buildTriangleTexture, []);
+  const linePositions = useMemo(() => new Float32Array(LINE_COUNT * 6), []);
   const { colors, scatter } = useMemo(() => {
     const random = seededRandom(71);
     const colorArray = new Float32Array(COUNT * 3);
@@ -466,6 +574,8 @@ function ParticleSwarm({ progress, pointer, scrollVelocity }) {
     const time = state.clock.elapsedTime;
     const mx = pointer.current.x * viewport.width * 0.5;
     const my = pointer.current.y * viewport.height * 0.5;
+    const storyStage = p * (SHAPE_COUNT - 1);
+    const projectWeight = smoothstep(1 - Math.min(1, Math.abs(storyStage - 1) / .78));
     for (let i = 0; i < COUNT; i++) {
       const offset = i * 3;
       for (let axis = 0; axis < 3; axis++) {
@@ -482,6 +592,15 @@ function ParticleSwarm({ progress, pointer, scrollVelocity }) {
           if (axis === 1) target -= scrollVelocity.current * blast.drift[i] * suspended * 0.22;
         } else {
           target = from[offset + axis] + (to[offset + axis] - from[offset + axis]) * morph;
+        }
+        if (projectWeight > .001) {
+          const cluster = projectAssignment[i];
+          const selected = cluster === projectFocus.current;
+          if (selected && axis < 2) {
+            const centre = PROJECT_CENTRES[cluster][axis];
+            target = centre + (target - centre) * (1 + projectWeight * .13);
+          }
+          if (axis === 2) target += projectWeight * (selected ? .58 : -.12);
         }
         buffer[offset + axis] += (target - buffer[offset + axis]) * Math.min(1, delta * 7.5);
       }
@@ -505,18 +624,33 @@ function ParticleSwarm({ progress, pointer, scrollVelocity }) {
       positions[offset + 2] = z;
     }
     geometryRef.current.attributes.position.needsUpdate = true;
+    if (lineGeometryRef.current) {
+      for (let line = 0; line < LINE_COUNT; line++) {
+        const a = line * 17 % COUNT;
+        const b = (a + 53 + line % 5 * 71) % COUNT;
+        const target = line * 6;
+        linePositions[target] = positions[a * 3];
+        linePositions[target + 1] = positions[a * 3 + 1];
+        linePositions[target + 2] = positions[a * 3 + 2];
+        linePositions[target + 3] = positions[b * 3];
+        linePositions[target + 4] = positions[b * 3 + 1];
+        linePositions[target + 5] = positions[b * 3 + 2];
+      }
+      lineGeometryRef.current.attributes.position.needsUpdate = true;
+    }
+    if (lineMaterialRef.current) lineMaterialRef.current.opacity = .08 + projectWeight * .08;
 
     if (groupRef.current) {
-      const stage = p * (SHAPE_COUNT - 1);
+      const stage = storyStage;
       const openingTransition = stage < 1 ? Math.sin(stage * Math.PI) : 0;
       const globeWeight = smoothstep(1 - Math.abs(stage - 2) / 0.72);
       globeSpin.current += delta * globeWeight * 0.28;
       const compact = viewport.width < 8;
-      const xStops = compact ? [0.42, 0.34, 0.34, 0.32, 0] : [2.08, 1.88, 1.95, 1.86, 0.5];
-      const targetX = interpolateStops(xStops, p) - openingTransition * (compact ? 0.28 : 1.12) + pointer.current.x * (compact ? 0.08 : 0.2);
-      const targetYRotation = interpolateStops([0.13, 0, 0, 0, 0.12], p) + globeSpin.current * globeWeight + pointer.current.x * 0.035;
-      const targetXRotation = interpolateStops([-0.04, 0.03, 0.02, 0, 0.17], p) + pointer.current.y * 0.025;
-      const targetScale = compact ? 0.7 : 1;
+      const xStops = compact ? [.42, .34, .34, .31, .26, 0] : [2.68, 2.02, 1.95, 1.84, 1.7, .5];
+      const targetX = interpolateStops(xStops, p) - openingTransition * (compact ? .28 : 1.12) + pointer.current.x * (compact ? .08 : .2);
+      const targetYRotation = interpolateStops([.13, 0, 0, .02, .08, .12], p) + globeSpin.current * globeWeight + pointer.current.x * .035;
+      const targetXRotation = interpolateStops([-.04, .03, .02, 0, .08, .17], p) + pointer.current.y * .025;
+      const targetScale = compact ? .7 : interpolateStops([.9, 1, 1, 1, 1, .95], p);
       groupRef.current.position.x += (targetX - groupRef.current.position.x) * Math.min(1, delta * 5);
       groupRef.current.position.y += (-scrollVelocity.current * openingTransition * 0.09 - groupRef.current.position.y) * Math.min(1, delta * 4);
       groupRef.current.rotation.y += (targetYRotation - groupRef.current.rotation.y) * Math.min(1, delta * 4.5);
@@ -534,6 +668,12 @@ function ParticleSwarm({ progress, pointer, scrollVelocity }) {
 
   return (
     <group ref={groupRef}>
+      <lineSegments>
+        <bufferGeometry ref={lineGeometryRef}>
+          <bufferAttribute attach="attributes-position" count={LINE_COUNT * 2} array={linePositions} itemSize={3} />
+        </bufferGeometry>
+        <lineBasicMaterial ref={lineMaterialRef} color="#8f83bc" transparent opacity={.09} depthWrite={false} />
+      </lineSegments>
       <points>
         <bufferGeometry ref={geometryRef}>
           <bufferAttribute attach="attributes-position" count={COUNT} array={current.current} itemSize={3} />
@@ -546,13 +686,14 @@ function ParticleSwarm({ progress, pointer, scrollVelocity }) {
 }
 
 export default function StoryField() {
-  const [enabled, setEnabled] = useState(false);
+  const [enabled, setEnabled] = useState(null);
   const progress = useRef(0);
   const pointer = useRef({ x: 0, y: 0, active: false });
+  const projectFocus = useRef(0);
   const scrollVelocity = useRef(0);
   const lastScroll = useRef({ y: 0, time: 0 });
   const shellRef = useRef(null);
-  const anchors = useRef([0, 1, 2, 3, 4]);
+  const anchors = useRef([0, 1, 2, 3, 4, 5]);
   const heroEnd = useRef(0.12);
 
   useEffect(() => {
@@ -564,10 +705,15 @@ export default function StoryField() {
   }, []);
 
   useEffect(() => {
-    if (!enabled) return undefined;
+    if (enabled === null) return undefined;
     document.documentElement.classList.add('field-active');
+    return () => document.documentElement.classList.remove('field-active');
+  }, [enabled]);
+
+  useEffect(() => {
+    if (!enabled) return undefined;
     const measure = () => {
-      anchors.current = ['#hero', '#projects', '#about', '#skills', '#contact'].map((selector) => {
+      anchors.current = ['#hero', '#projects', '#about', '#experience', '#skills', '#contact'].map((selector) => {
         const node = document.querySelector(selector);
         return node ? Math.max(0, node.offsetTop - window.innerHeight * 0.42) : 0;
       });
@@ -595,7 +741,13 @@ export default function StoryField() {
       pointer.current.active = true;
     };
     const onPointerLeave = () => { pointer.current.active = false; };
+    const onProjectChange = (event) => {
+      const next = Number(event.detail?.index);
+      if (Number.isInteger(next)) projectFocus.current = Math.min(2, Math.max(0, next));
+    };
     const onResize = () => { measure(); onScroll(); };
+    const resizeObserver = new ResizeObserver(onResize);
+    resizeObserver.observe(document.body);
     measure();
     lastScroll.current = { y: window.scrollY, time: performance.now() };
     onScroll();
@@ -603,22 +755,25 @@ export default function StoryField() {
     window.addEventListener('scroll', onScroll, { passive: true });
     window.addEventListener('pointermove', onPointerMove, { passive: true });
     window.addEventListener('pointerleave', onPointerLeave);
+    window.addEventListener('portfolio:project-change', onProjectChange);
     return () => {
-      document.documentElement.classList.remove('field-active');
+      resizeObserver.disconnect();
       window.removeEventListener('resize', onResize);
       window.removeEventListener('scroll', onScroll);
       window.removeEventListener('pointermove', onPointerMove);
       window.removeEventListener('pointerleave', onPointerLeave);
+      window.removeEventListener('portfolio:project-change', onProjectChange);
     };
   }, [enabled]);
 
-  if (!enabled) return null;
+  if (enabled === null) return null;
+  if (!enabled) return <div className="story-field story-field-fallback" aria-hidden="true"><span /><span /><span /></div>;
   return (
     <div className="story-field" ref={shellRef} aria-hidden="true">
-      <Canvas dpr={[1, 1.6]} camera={{ position: [0, 0, 9], fov: 42 }} gl={{ alpha: true, antialias: true, powerPreference: 'high-performance' }}>
-        <ParticleSwarm progress={progress} pointer={pointer} scrollVelocity={scrollVelocity} />
+      <Canvas dpr={[1, 1.5]} camera={{ position: [0, 0, 9], fov: 42 }} gl={{ alpha: true, antialias: true, powerPreference: 'high-performance' }}>
+        <ParticleSwarm progress={progress} pointer={pointer} projectFocus={projectFocus} scrollVelocity={scrollVelocity} />
         <EffectComposer multisampling={0}>
-          <Bloom mipmapBlur luminanceThreshold={0.5} luminanceSmoothing={0.35} intensity={1.05} radius={0.72} />
+          <Bloom mipmapBlur luminanceThreshold={.46} luminanceSmoothing={.4} intensity={.86} radius={.68} />
         </EffectComposer>
       </Canvas>
     </div>

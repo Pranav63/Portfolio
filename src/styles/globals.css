@@ -146,6 +146,17 @@ h1, h2, h3, h4 { font-weight: var(--w-regular); text-wrap: balance; }
 .site-progress { position: absolute; left: 0; right: 0; bottom: 0; height: 1px; background: var(--electric-iris); transform-origin: left; }
 .menu-toggle, .mobile-nav { display: none; }
 
+/* Persistent chapter index: a quiet navigational instrument, not another menu bar. */
+.chapter-rail { position: fixed; z-index: 90; top: 50%; right: var(--space-18); display: flex; flex-direction: column; gap: 10px; align-items: flex-end; transform: translateY(-50%); }
+.chapter-rail-label { margin: 0 7px 7px 0; color: #666771; font-size: .625rem; letter-spacing: .16em; text-transform: uppercase; writing-mode: vertical-rl; }
+.chapter-rail button { position: relative; display: grid; grid-template-columns: 22px 22px; gap: 9px; align-items: center; justify-content: end; min-height: 22px; border: 0; background: transparent; cursor: pointer; }
+.chapter-rail button > span { color: #686973; font-size: .625rem; font-variant-numeric: tabular-nums; transition: color .25s ease; }
+.chapter-rail button i { display: block; width: 14px; height: 1px; margin-left: auto; background: rgba(255, 255, 255, .28); transition: width .35s cubic-bezier(.22, 1, .36, 1), background .25s ease; }
+.chapter-rail button strong { position: absolute; right: 55px; padding: 6px 9px; border-radius: var(--radius-full); background: rgba(0, 0, 0, .72); color: var(--silver-mist); font-size: .625rem; font-weight: var(--w-medium); letter-spacing: .06em; text-transform: uppercase; white-space: nowrap; opacity: 0; transform: translateX(7px); pointer-events: none; backdrop-filter: blur(12px); transition: opacity .25s ease, transform .3s cubic-bezier(.22, 1, .36, 1); }
+.chapter-rail button:hover strong, .chapter-rail button:focus-visible strong, .chapter-rail button.is-active strong { opacity: 1; transform: translateX(0); }
+.chapter-rail button:hover i, .chapter-rail button.is-active i { width: 22px; background: var(--saffron-spark); }
+.chapter-rail button.is-active > span { color: var(--bone-white); }
+
 /* ---------- hero ---------- */
 .hero {
   display: flex;
@@ -228,6 +239,15 @@ h1, h2, h3, h4 { font-weight: var(--w-regular); text-wrap: balance; }
   letter-spacing: .025em;
   text-transform: uppercase;
 }
+
+.hero-system-map { position: absolute; z-index: 3; top: calc(50% - 150px); right: max(var(--space-60), calc((100vw - var(--page-max)) / 2)); width: 214px; padding: var(--space-18); border: 1px solid rgba(255, 255, 255, .12); border-radius: 18px; background: rgba(0, 0, 0, .34); backdrop-filter: blur(12px); }
+.hero-system-map > p { display: flex; gap: 9px; align-items: center; margin-bottom: var(--space-18); color: var(--silver-mist); font-size: .625rem; font-weight: var(--w-medium); letter-spacing: .12em; text-transform: uppercase; }
+.hero-system-map > p span { width: 5px; height: 5px; border-radius: 50%; background: var(--saffron-spark); box-shadow: 0 0 12px rgba(255, 184, 41, .72); }
+.hero-system-map ol { list-style: none; }
+.hero-system-map li { display: grid; grid-template-columns: 24px 1fr; gap: 9px; padding: 9px 0; border-top: 1px solid rgba(255, 255, 255, .09); }
+.hero-system-map li > span { color: #6c6d76; font-size: .625rem; font-variant-numeric: tabular-nums; }
+.hero-system-map li strong { font-size: .75rem; font-weight: var(--w-regular); letter-spacing: .02em; }
+.hero-system-map small { display: block; margin-top: var(--space-12); color: #777983; font-size: .6875rem; font-weight: var(--w-light); line-height: 1.45; }
 
 /* ---------- shared section header rhythm ---------- */
 .projects-head, .experience-head, .notes-head { margin-bottom: var(--space-96); }
@@ -475,6 +495,11 @@ h1, h2, h3, h4 { font-weight: var(--w-regular); text-wrap: balance; }
 ::-webkit-scrollbar-thumb { background: #2a2c33; border-radius: var(--radius-full); }
 
 /* ---------- responsive ---------- */
+@media (max-width: 1100px) {
+  .chapter-rail { display: none; }
+  .desktop-nav { gap: var(--space-18); }
+}
+
 @media (max-width: 1024px) {
   .about-grid, .contact-grid { gap: var(--space-60); }
   .experience-list article, .notes-list article { gap: var(--space-36); }
@@ -525,6 +550,7 @@ h1, h2, h3, h4 { font-weight: var(--w-regular); text-wrap: balance; }
   }
 
   .hero { min-height: 92svh; padding-block: var(--space-120) var(--space-60); }
+  .hero-system-map { display: none; }
   /* Stack the actions so neither label wraps mid-word. */
   .hero-intro > div { flex-direction: column; align-items: flex-start; gap: var(--space-18); }
   .primary-link { white-space: nowrap; }

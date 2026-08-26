@@ -73,6 +73,7 @@ export default function Projects() {
   const selectProject = (index) => {
     if (index === active) return;
     setActive(index);
+    window.dispatchEvent(new CustomEvent('portfolio:project-change', { detail: { index } }));
     window.requestAnimationFrame(() => {
       if (window.scrollY > document.getElementById("projects")?.offsetTop + 260) {
         if (lenis) lenis.scrollTo(caseStudyRef.current, { block: 'start' });

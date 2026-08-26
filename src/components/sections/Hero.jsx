@@ -49,6 +49,17 @@ export default function Hero() {
         </motion.div>
       </div>
 
+      <motion.aside className="hero-system-map" aria-label="The production AI lifecycle represented by the visual" {...rise(.54)}>
+        <p><span /> Live system atlas</p>
+        <ol>
+          <li><span>01</span><strong>Research</strong></li>
+          <li><span>02</span><strong>Evaluate</strong></li>
+          <li><span>03</span><strong>Deploy</strong></li>
+          <li><span>04</span><strong>Observe</strong></li>
+        </ol>
+        <small>The same system changes state as you move through the work.</small>
+      </motion.aside>
+
       <div className="hero-foot">
         <span>Singapore → Abu Dhabi</span>
         <span>Models · evaluation · production</span>
