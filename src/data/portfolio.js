@@ -5,9 +5,7 @@ export const PROJECTS = [
     subtitle: 'Turns financial news into paper-trading decisions with human approval',
     description:
       'Reads financial news, confirms the signal with technical indicators, and prepares a paper trade for human approval. Every decision is logged for review.',
-    tags: ['FastAPI', 'Next.js', 'Redis', 'PostgreSQL', 'Groq', 'Alpaca'],
     metrics: ['15-min News Cycle', '55% Confidence Gate', 'Paper Trading Only'],
-    status: 'SOURCE VERIFIED',
     caseStudy: {
       evidence: [
         { value: '15 min', label: 'news cycle' },
@@ -26,8 +24,6 @@ export const PROJECTS = [
       { src: '/project-proofs/trading-signals.png', width: 1600, height: 1000, alt: 'Expanded trading signal showing model reasoning, technical indicator checks, confidence breakdown and a pending manual review', caption: 'Signal reasoning and technical checks' },
     ],
     github: 'https://github.com/Pranav63/trading-quant-ai-agent',
-    live: 'https://github.com/Pranav63/trading-quant-ai-agent',
-    accent: '#C9A84C',
   },
   {
     id: 'rag-eval',
@@ -35,9 +31,7 @@ export const PROJECTS = [
     subtitle: 'Answers questions from research papers and measures answer quality',
     description:
       'A question-answering system over 73 AI research papers: hybrid search, reranking, and a dashboard that tracks answer quality and speed.',
-    tags: ['BGE-M3', 'Qdrant', 'CrossEncoder', 'PostgreSQL', 'Streamlit', 'Python'],
     metrics: ['3.6 / 5 Judge Score', '~950ms Avg Query', '10-query Evaluation'],
-    status: 'RESULTS DOCUMENTED',
     caseStudy: {
       evidence: [
         { value: '3.6 / 5', label: 'average judge score' },
@@ -56,8 +50,6 @@ export const PROJECTS = [
       { src: '/project-proofs/rag-evaluation.png', width: 3348, height: 1688, alt: 'RAG evaluation dashboard showing answer quality and latency metrics', caption: 'Evaluation and latency dashboard' },
     ],
     github: 'https://github.com/Pranav63/production-rag-eval',
-    live: 'https://github.com/Pranav63/production-rag-eval',
-    accent: '#C9A84C',
   },
   {
     id: 'qlora',
@@ -65,9 +57,7 @@ export const PROJECTS = [
     subtitle: 'Teaches a compact model how Gulf professionals naturally mix Arabic and English',
     description:
       'A fine-tuning pipeline for Qwen2.5-3B that learns the Arabic-English code-switching used in Gulf workplaces: dataset prep, lightweight adapter training tracked in MLflow, and a base-versus-tuned comparison on the same prompts.',
-    tags: ['Qwen2.5', 'QLoRA', 'PEFT', 'MLflow', 'Hugging Face', 'Arabic NLP'],
     metrics: ['34.7% Code-switch Ratio', '+584% vs Base', '653 Clean Samples'],
-    status: 'RAW OUTPUTS COMMITTED',
     caseStudy: {
       evidence: [
         { value: '34.7%', label: 'fine-tuned ratio' },
@@ -85,8 +75,6 @@ export const PROJECTS = [
       { src: '/project-proofs/qlora-benchmark.png', width: 2086, height: 925, alt: 'Chart comparing Arabic-English code-switch ratios for the base and fine-tuned Qwen models', caption: 'Base model versus fine-tuned comparison' },
     ],
     github: 'https://github.com/Pranav63/qlora-multilingual-finetuning',
-    live: 'https://github.com/Pranav63/qlora-multilingual-finetuning',
-    accent: '#8B6F47',
   },
 ];
 
@@ -97,15 +85,17 @@ export const EXPERIENCE = [
     period: 'Jul 2026 - Present',
     location: 'Abu Dhabi, UAE',
     achievements: [
-      'Building applied AI systems from Abu Dhabi for high-impact, real-world use cases',
-      'Focused on agentic architectures, evaluation, reliability and production delivery',
+      'Machine-Readable Government: turning uploaded government policy into machine-readable artifacts that drive evidence-backed, reviewable case workflows',
+      'Bilingual PDF-to-markdown and policy-graph processing with governed extraction review, versioned provenance and controlled publication',
+      'Eval Workbench: approved ground-truth suites, repeated-run stability measurement and exact-version release gates before anything ships',
+      'Agentic case processing on FastAPI, PostgreSQL and AKS, with row-level security and immutable run fencing',
     ],
-    tags: ['Applied AI', 'Agentic Systems', 'LLMs', 'Evaluation', 'Production Engineering'],
+    tags: ['Applied AI', 'Agentic Systems', 'Evaluation', 'Governance', 'Azure / AKS'],
   },
   {
     title: 'Senior ML Engineer',
     company: 'Hewlett Packard Enterprise',
-    period: 'Aug 2024 - Completed',
+    period: 'Aug 2024 - Jul 2026',
     location: 'Singapore',
     achievements: [
       'Text-to-SQL platform: 85% accuracy, 2,000+ queries/week across 7 business units',
@@ -141,13 +131,36 @@ export const EXPERIENCE = [
   },
 ];
 
+// The one source of truth for capabilities. Skills.jsx renders the headline
+// groups from CAPABILITIES; this longer list backs the résumé.
+export const CAPABILITIES = [
+  ['Applied AI', 'Agentic systems, RAG, fine-tuning, tool use and prompt design'],
+  ['Evaluation', 'LLM-as-judge, RAGAS, retrieval quality, release regression and MLflow'],
+  ['Engineering', 'Python, FastAPI, PostgreSQL, Redis, Docker and Kubernetes'],
+  ['Platforms', 'Azure AI Foundry, AKS, GCP, AWS, Qdrant, KServe and production monitoring'],
+];
+
 export const SKILLS = {
-  'Agentic AI & LLMs': ['LangGraph', 'LangChain', 'GPT-4o', 'RAG', 'Multi-Agent', 'Prompt Engineering', 'vLLM', 'HuggingFace'],
-  'ML & Modeling': ['PPO / RL', 'QLoRA / PEFT', 'XGBoost', 'PyTorch', 'TensorFlow', 'Fine-tuning', 'SHAP / LIME'],
-  'Cloud & Infra': ['Azure (primary)', 'Kubernetes', 'Docker', 'AWS', 'GCP', 'FastAPI', 'Keycloak'],
-  'MLOps': ['MLflow', 'KServe', 'Prometheus', 'Grafana', 'Azure DevOps', 'GitHub Actions'],
-  'Data & Vector': ['PostgreSQL', 'Qdrant', 'Redis', 'Pinecone', 'Supabase', 'Snowflake'],
+  'Applied AI & Agents': ['OpenAI Agents SDK', 'LangGraph', 'LangChain', 'Multi-agent orchestration', 'RAG', 'GPT-4o', 'LangSmith'],
+  'Evaluation & Governance': ['LLM-as-judge', 'RAGAS', 'Release regression', 'Prompt-safety controls', 'Human-in-the-loop', 'MLflow'],
+  'ML & Modeling': ['PPO', 'Ray RLlib', 'QLoRA / PEFT', 'PyTorch', 'TensorFlow', 'Hugging Face', 'XGBoost', 'SHAP / LIME'],
+  'Cloud & Infrastructure': ['Azure AI Foundry', 'Azure OpenAI', 'AKS', 'Kubernetes', 'Docker', 'Terraform', 'AWS', 'GCP', 'Entra ID'],
+  'MLOps & Backend': ['FastAPI', 'PostgreSQL', 'Row-level security', 'KServe', 'Prometheus', 'Grafana', 'GitHub Actions', 'Azure DevOps'],
+  'Data & Interfaces': ['PostgreSQL / pgvector', 'Qdrant', 'Redis', 'Snowflake', 'Airflow', 'SQL', 'React', 'TypeScript'],
 };
+
+export const EDUCATION = [
+  {
+    degree: 'MSc IT in Business — Artificial Intelligence',
+    school: 'Singapore Management University',
+    period: 'Jan 2019 - May 2020',
+  },
+  {
+    degree: 'BTech Computer Science',
+    school: 'University of Petroleum and Energy Studies, India',
+    period: 'Aug 2014 - Apr 2018',
+  },
+];
 
 export const SOCIAL = [
   { label: 'GitHub',   href: 'https://github.com/Pranav63',                  icon: 'github'   },

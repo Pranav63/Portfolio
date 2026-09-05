@@ -3,6 +3,10 @@
 import { useState } from 'react';
 import { FaGithub, FaLinkedin } from 'react-icons/fa';
 import { useLenis } from 'lenis/react';
+import { SOCIAL } from '@/data/portfolio';
+
+const ICONS = { github: FaGithub, linkedin: FaLinkedin };
+const EMAIL = SOCIAL.find((item) => item.icon === 'mail').href.replace('mailto:', '');
 
 export default function Contact() {
   const lenis = useLenis();
@@ -30,16 +34,22 @@ export default function Contact() {
           <p className="section-label">Contact</p>
           <h2>Have something worth thinking through?</h2>
           <p>I&apos;m always open to a thoughtful conversation about applied AI, reliable systems or difficult engineering problems.</p>
-          <a className="contact-email" href="mailto:pranav2vis@gmail.com">pranav2vis@gmail.com ↗</a>
+          <a className="contact-email" href={`mailto:${EMAIL}`}>{EMAIL} ↗</a>
           <div className="social-links">
-            <a href="https://github.com/Pranav63" target="_blank" rel="noreferrer"><FaGithub /> GitHub</a>
-            <a href="https://www.linkedin.com/in/pranavarora63/" target="_blank" rel="noreferrer"><FaLinkedin /> LinkedIn</a>
+            {SOCIAL.filter((item) => ICONS[item.icon]).map((item) => {
+              const Icon = ICONS[item.icon];
+              return (
+                <a key={item.label} href={item.href} target="_blank" rel="noreferrer">
+                  <Icon aria-hidden="true" /> {item.label}
+                </a>
+              );
+            })}
           </div>
         </div>
 
         <form className="contact-form" onSubmit={submit}>
           <label><span>Name</span><input required name="name" autoComplete="name" value={form.name} onChange={update('name')} placeholder="Your name" /></label>
-          <label><span>Email</span><input required type="email" name="email" autoComplete="email" value={form.email} onChange={update('email')} placeholder="you@company.com" /></label>
+          <label><span>Email</span><input required type="email" name="email" autoComplete="email" spellCheck={false} value={form.email} onChange={update('email')} placeholder="you@company.com" /></label>
           <label><span>Message</span><textarea required rows={5} name="message" value={form.message} onChange={update('message')} placeholder="What are you working on?" /></label>
           <button className="submit-button" type="submit" disabled={state === 'sending'}>{state === 'sending' ? 'Sending…' : 'Send message'} <span>↗</span></button>
           {state === 'sent' && <p className="form-state success" role="status">Thanks, I&apos;ll get back to you soon.</p>}

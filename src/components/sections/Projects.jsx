@@ -35,6 +35,8 @@ export default function Projects() {
   const [proofZoom, setProofZoom] = useState(.9);
   const caseStudyRef = useRef(null);
   const lightboxMediaRef = useRef(null);
+  const dialogRef = useRef(null);
+  const lastTriggerRef = useRef(null);
   const reducedMotion = useReducedMotion();
   const project = PROJECTS[active];
   const detail = DETAILS[project.id];
@@ -43,12 +45,36 @@ export default function Projects() {
     if (!activeProof) return undefined;
 
     const previousOverflow = document.body.style.overflow;
-    const closeOnEscape = (event) => {
-      if (event.key === 'Escape') setActiveProof(null);
+
+    // aria-modal only claims the rest of the page is inert; Tab still has to be
+    // kept inside the dialog by hand.
+    const focusables = () => Array.from(
+      dialogRef.current?.querySelectorAll('button, [href], input, textarea, [tabindex]:not([tabindex="-1"])') ?? [],
+    ).filter((node) => !node.disabled && node.offsetParent !== null);
+
+    const onKeyDown = (event) => {
+      if (event.key === 'Escape') {
+        setActiveProof(null);
+        return;
+      }
+      if (event.key !== 'Tab') return;
+      const nodes = focusables();
+      if (nodes.length === 0) return;
+      const first = nodes[0];
+      const last = nodes[nodes.length - 1];
+      if (event.shiftKey && document.activeElement === first) {
+        event.preventDefault();
+        last.focus();
+      } else if (!event.shiftKey && document.activeElement === last) {
+        event.preventDefault();
+        first.focus();
+      }
     };
 
+    // Lenis drives scrolling on its own RAF loop and ignores body overflow.
+    if (lenis) lenis.stop();
     document.body.style.overflow = 'hidden';
-    window.addEventListener('keydown', closeOnEscape);
+    window.addEventListener('keydown', onKeyDown);
 
     window.requestAnimationFrame(() => {
       const media = lightboxMediaRef.current;
@@ -56,12 +82,15 @@ export default function Projects() {
     });
 
     return () => {
+      if (lenis) lenis.start();
       document.body.style.overflow = previousOverflow;
-      window.removeEventListener('keydown', closeOnEscape);
+      window.removeEventListener('keydown', onKeyDown);
+      lastTriggerRef.current?.focus();
     };
-  }, [activeProof]);
+  }, [activeProof, lenis]);
 
-  const openProof = (proof) => {
+  const openProof = (proof, trigger) => {
+    lastTriggerRef.current = trigger;
     setProofZoom(.9);
     setActiveProof(proof);
   };
@@ -151,7 +180,7 @@ export default function Projects() {
                   {project.proofs.map((proof) => (
                     <motion.button
                       type="button"
-                      onClick={() => openProof(proof)}
+                      onClick={(event) => openProof(proof, event.currentTarget)}
                       aria-label={`Open full-size image: ${proof.alt}`}
                       key={proof.src}
                       initial={{ opacity: 0, y: 18 }}
@@ -195,6 +224,7 @@ export default function Projects() {
             >
               <motion.div
                 className="image-lightbox-content"
+                ref={dialogRef}
                 initial={reducedMotion ? false : { opacity: 0, scale: .96, y: 16 }}
                 animate={{ opacity: 1, scale: 1, y: 0 }}
                 exit={{ opacity: 0, scale: .98, y: 8 }}

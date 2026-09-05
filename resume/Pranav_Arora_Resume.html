@@ -6,27 +6,28 @@
   <style>
     @page { size: A4; margin: 0; }
     * { box-sizing: border-box; }
-    body { margin: 0; background: #ececec; color: #111; font-family: Arial, Helvetica, sans-serif; font-size: 8.35pt; line-height: 1.26; }
+    body { margin: 0; background: #ececec; color: #111; font-family: Arial, Helvetica, sans-serif; font-size: 9.5pt; line-height: 1.32; }
     .page { width: 210mm; min-height: 297mm; margin: 0 auto 10mm; padding: 11mm 14mm 10mm; background: #fff; page-break-after: always; }
     .page:last-child { page-break-after: auto; }
     header { text-align: center; margin-bottom: 5mm; }
-    h1 { margin: 0 0 1.5mm; font-size: 20pt; font-weight: 500; letter-spacing: .01em; }
-    .contact { font-size: 8.3pt; }
+    h1 { margin: 0 0 1.5mm; font-size: 21pt; font-weight: 500; letter-spacing: .01em; }
+    .contact { font-size: 9pt; }
     .contact a { color: inherit; text-decoration: none; }
     section { margin-top: 3.7mm; }
-    h2 { margin: 0 0 2.1mm; padding-bottom: 1mm; border-bottom: .55pt solid #333; font-size: 11.5pt; font-weight: 700; }
+    h2 { margin: 0 0 2.1mm; padding-bottom: 1mm; border-bottom: .55pt solid #333; font-size: 12pt; font-weight: 700; }
     .job { margin-bottom: 3.2mm; break-inside: avoid; }
     .job-head { display: grid; grid-template-columns: 1fr auto; align-items: baseline; column-gap: 5mm; }
-    .job-title { font-size: 9.2pt; font-weight: 700; }
+    .job-title { font-size: 10pt; font-weight: 700; }
     .date { font-weight: 700; white-space: nowrap; }
     .company { margin: .4mm 0 1.2mm; font-weight: 600; }
     .project-title { margin: 1.6mm 0 .6mm; font-weight: 700; }
     ul { margin: .7mm 0 0 4.7mm; padding: 0; }
     li { margin: 0 0 .75mm 0; padding-left: .5mm; }
-    .impact { margin: .8mm 0 0; font-size: 8.1pt; }
+    .impact { margin: .8mm 0 0; font-size: 9pt; }
     .impact strong { font-weight: 700; }
     .education-row { display: grid; grid-template-columns: 1fr auto; gap: 5mm; margin-bottom: 1.4mm; }
     .skills p, .certs p { margin: 0 0 1.15mm; }
+    .profile { margin: 0; }
     .skills strong { font-weight: 700; }
     .muted { color: #222; }
     @media screen {
@@ -51,6 +52,14 @@
     </header>
 
     <section>
+      <h2>Profile</h2>
+      <p class="profile">Applied AI Scientist building governed, evaluation-first AI systems for government and enterprise
+      — agentic workflows, retrieval and release safety, taken from research through production deployment.
+      Six years across applied AI, semiconductor manufacturing and enterprise ML in Singapore and Abu Dhabi,
+      with delivered impact including $10M annual revenue from RL scheduling and platforms serving 5,000+ users.</p>
+    </section>
+
+    <section>
       <h2>Experience</h2>
 
       <div class="job">
@@ -58,7 +67,7 @@
           <div class="job-title">Applied AI Scientist</div>
           <div class="date">Jul 2026 – Present</div>
         </div>
-        <div class="company">Inception42, a G42 company · Abu Dhabi, UAE</div>
+        <div class="company">Inception, a G42 company · Abu Dhabi, UAE</div>
         <div class="project-title">Machine-Readable Government (MRG) — Policy Intelligence &amp; Compliance</div>
         <ul>
           <li>Building a multi-tenant policy-compliance platform that transforms uploaded government policies into machine-readable artifacts and applies them to evidence-backed, reviewable case workflows.</li>
@@ -74,6 +83,7 @@
         <ul>
           <li>Delivering the platform with FastAPI, PostgreSQL, React/TypeScript, Microsoft Entra ID, row-level security, Azure/AKS infrastructure, immutable run fencing, and privacy-safe production observability.</li>
         </ul>
+        <p class="impact"><strong>Scope:</strong> multi-tenant policy platform across bilingual (Arabic/English) corpora · governed extraction, evaluation and release-gate lifecycle · agentic case processing on isolated Docker/AKS workers</p>
       </div>
 
       <div class="job">

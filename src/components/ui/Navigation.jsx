@@ -21,28 +21,60 @@ export default function Navigation() {
   const [active, setActive] = useState('hero');
   const [progress, setProgress] = useState(0);
 
+  // The active section comes from an IntersectionObserver rather than measuring
+  // offsetTop for every section on every scroll event, which forced a synchronous
+  // layout each time. Only the document height is measured, and only on resize.
   useEffect(() => {
-    const update = () => {
-      setCompact(window.scrollY > 36);
-      const available = document.documentElement.scrollHeight - window.innerHeight;
-      setProgress(available > 0 ? Math.min(100, (window.scrollY / available) * 100) : 0);
+    const sections = ['hero', ...LINKS.map(([, id]) => id)]
+      .map((id) => document.getElementById(id))
+      .filter(Boolean);
+    if (sections.length === 0) return undefined;
 
-      const marker = window.scrollY + window.innerHeight * 0.34;
-      const sections = ['hero', ...LINKS.map(([, id]) => id)];
-      let current = 'hero';
-      sections.forEach((id) => {
-        const node = document.getElementById(id);
-        if (node && node.offsetTop <= marker) current = id;
-      });
-      setActive(current);
+    const visible = new Map();
+    const observer = new IntersectionObserver(
+      (entries) => {
+        entries.forEach((entry) => visible.set(entry.target.id, entry.intersectionRatio));
+        let best = null;
+        let bestRatio = 0;
+        visible.forEach((ratio, id) => {
+          if (ratio > bestRatio) {
+            bestRatio = ratio;
+            best = id;
+          }
+        });
+        if (best) setActive(best);
+      },
+      { threshold: [0, .1, .25, .5, .75, 1], rootMargin: '-15% 0px -55% 0px' },
+    );
+    sections.forEach((node) => observer.observe(node));
+    return () => observer.disconnect();
+  }, []);
+
+  useEffect(() => {
+    let available = Math.max(0, document.documentElement.scrollHeight - window.innerHeight);
+    let frame = 0;
+
+    const read = () => {
+      frame = 0;
+      setCompact(window.scrollY > 36);
+      setProgress(available > 0 ? Math.min(100, (window.scrollY / available) * 100) : 0);
+    };
+    const onScroll = () => {
+      if (frame) return;
+      frame = window.requestAnimationFrame(read);
+    };
+    const onResize = () => {
+      available = Math.max(0, document.documentElement.scrollHeight - window.innerHeight);
+      onScroll();
     };
 
-    update();
-    window.addEventListener('scroll', update, { passive: true });
-    window.addEventListener('resize', update);
+    read();
+    window.addEventListener('scroll', onScroll, { passive: true });
+    window.addEventListener('resize', onResize);
     return () => {
-      window.removeEventListener('scroll', update);
-      window.removeEventListener('resize', update);
+      if (frame) window.cancelAnimationFrame(frame);
+      window.removeEventListener('scroll', onScroll);
+      window.removeEventListener('resize', onResize);
     };
   }, []);
 

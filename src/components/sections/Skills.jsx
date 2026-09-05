@@ -1,13 +1,7 @@
 'use client';
 
 import { motion } from 'framer-motion';
-
-const GROUPS = [
-  ['Applied AI', 'Agentic systems, RAG, fine-tuning, tool use and prompt design'],
-  ['Evaluation', 'LLM-as-judge, retrieval quality, MLflow and experiment design'],
-  ['Engineering', 'Python, FastAPI, PostgreSQL, Redis, Docker and Kubernetes'],
-  ['Platforms', 'Azure, GCP, AWS, Qdrant, KServe and production monitoring'],
-];
+import { CAPABILITIES } from '@/data/portfolio';
 
 export default function Skills() {
   return (
@@ -19,7 +13,7 @@ export default function Skills() {
           <p>I choose tools around the problem, the team and the operating constraints, not because they are fashionable.</p>
         </motion.div>
         <div className="tools-list">
-          {GROUPS.map(([name, detail], index) => (
+          {CAPABILITIES.map(([name, detail], index) => (
             <motion.article
               key={name}
               initial={{ opacity: 0, y: 18 }}

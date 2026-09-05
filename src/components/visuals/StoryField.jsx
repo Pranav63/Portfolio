@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useMemo, useRef, useState } from 'react';
+import { useEffect, useMemo, useRef } from 'react';
 import { Canvas, useFrame, useThree } from '@react-three/fiber';
 import { EffectComposer, Bloom } from '@react-three/postprocessing';
 import * as THREE from 'three';
@@ -686,7 +686,7 @@ function ParticleSwarm({ progress, pointer, projectFocus, scrollVelocity }) {
 }
 
 export default function StoryField() {
-  const [enabled, setEnabled] = useState(null);
+  // Mount gating (reduced motion + device capability) is owned by StoryFieldMount.
   const progress = useRef(0);
   const pointer = useRef({ x: 0, y: 0, active: false });
   const projectFocus = useRef(0);
@@ -695,29 +695,16 @@ export default function StoryField() {
   const shellRef = useRef(null);
   const anchors = useRef([0, 1, 2, 3, 4, 5]);
   const heroEnd = useRef(0.12);
+  const docHeight = useRef(1);
 
   useEffect(() => {
-    const query = window.matchMedia('(prefers-reduced-motion: reduce)');
-    const update = () => setEnabled(!query.matches);
-    update();
-    query.addEventListener('change', update);
-    return () => query.removeEventListener('change', update);
-  }, []);
-
-  useEffect(() => {
-    if (enabled === null) return undefined;
-    document.documentElement.classList.add('field-active');
-    return () => document.documentElement.classList.remove('field-active');
-  }, [enabled]);
-
-  useEffect(() => {
-    if (!enabled) return undefined;
     const measure = () => {
       anchors.current = ['#hero', '#projects', '#about', '#experience', '#skills', '#contact'].map((selector) => {
         const node = document.querySelector(selector);
         return node ? Math.max(0, node.offsetTop - window.innerHeight * 0.42) : 0;
       });
       const documentHeight = Math.max(1, document.documentElement.scrollHeight - window.innerHeight);
+      docHeight.current = documentHeight;
       const hero = document.getElementById('hero');
       heroEnd.current = hero ? Math.min(0.3, hero.offsetHeight / documentHeight) : 0.12;
     };
@@ -729,8 +716,7 @@ export default function StoryField() {
       lastScroll.current = { y: window.scrollY, time: now };
       progress.current = sectionProgress(window.scrollY, anchors.current);
       if (shellRef.current) {
-        const documentHeight = Math.max(1, document.documentElement.scrollHeight - window.innerHeight);
-        const scrollFraction = Math.min(1, Math.max(0, window.scrollY / documentHeight));
+        const scrollFraction = Math.min(1, Math.max(0, window.scrollY / docHeight.current));
         const fade = 1 - Math.min(1, scrollFraction / Math.max(0.0001, heroEnd.current)) * 0.28;
         shellRef.current.style.opacity = fade.toFixed(3);
       }
@@ -764,10 +750,8 @@ export default function StoryField() {
       window.removeEventListener('pointerleave', onPointerLeave);
       window.removeEventListener('portfolio:project-change', onProjectChange);
     };
-  }, [enabled]);
+  }, []);
 
-  if (enabled === null) return null;
-  if (!enabled) return <div className="story-field story-field-fallback" aria-hidden="true"><span /><span /><span /></div>;
   return (
     <div className="story-field" ref={shellRef} aria-hidden="true">
       <Canvas dpr={[1, 1.5]} camera={{ position: [0, 0, 9], fov: 42 }} gl={{ alpha: true, antialias: true, powerPreference: 'high-performance' }}>

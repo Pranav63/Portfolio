@@ -6,14 +6,14 @@ import Skills from '@/components/sections/Skills';
 import FieldNotes from '@/components/sections/FieldNotes';
 import Contact from '@/components/sections/Contact';
 import Navigation from '@/components/ui/Navigation';
-import StoryField from '@/components/visuals/StoryField';
+import StoryFieldMount from '@/components/visuals/StoryFieldMount';
 
 export default function Home() {
   return (
     <>
-      <StoryField />
+      <StoryFieldMount />
       <Navigation />
-      <main>
+      <main id="main">
         <Hero />
         <Projects />
         <About />
