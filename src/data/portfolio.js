@@ -81,7 +81,7 @@ export const PROJECTS = [
 export const EXPERIENCE = [
   {
     title: 'Applied AI Scientist',
-    company: 'Inception · a G42 company',
+    company: 'Inception42 · a G42 company',
     period: 'Jul 2026 - Present',
     location: 'Abu Dhabi, UAE',
     achievements: [
@@ -151,7 +151,7 @@ export const SKILLS = {
 
 export const EDUCATION = [
   {
-    degree: 'MSc IT in Business — Artificial Intelligence',
+    degree: 'MSc IT in Business, Artificial Intelligence',
     school: 'Singapore Management University',
     period: 'Jan 2019 - May 2020',
   },

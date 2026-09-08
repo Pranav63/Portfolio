@@ -86,7 +86,7 @@ export async function POST(request) {
         <div style="font-family: sans-serif; max-width: 540px; color: #1a1a1a;">
           <div style="background: #090C18; padding: 24px 28px; border-radius: 12px 12px 0 0;">
             <h2 style="color: #C9A84C; margin: 0; font-size: 1.1rem; letter-spacing: 0.05em;">
-              NEW MESSAGE — PORTFOLIO
+              NEW MESSAGE: PORTFOLIO
             </h2>
           </div>
           <div style="background: #f9f9f9; padding: 28px; border-radius: 0 0 12px 12px; border: 1px solid #eee;">

@@ -1,137 +1,85 @@
 'use client';
 
-import { useEffect, useState } from 'react';
-import { AnimatePresence, motion } from 'framer-motion';
-import { useLenis } from 'lenis/react';
-
-const LINKS = [
-  ['Work', 'projects'],
-  ['About', 'about'],
-  ['Experience', 'experience'],
-  ['Capabilities', 'skills'],
-  ['Contact', 'contact'],
-];
-
-const CHAPTERS = [['Overview', 'hero'], ...LINKS];
+import { useEffect, useRef, useState } from 'react';
+import Link from 'next/link';
+import { usePathname } from 'next/navigation';
 
 export default function Navigation() {
-  const lenis = useLenis();
+  const pathname = usePathname();
   const [open, setOpen] = useState(false);
   const [compact, setCompact] = useState(false);
-  const [active, setActive] = useState('hero');
-  const [progress, setProgress] = useState(0);
-
-  // The active section comes from an IntersectionObserver rather than measuring
-  // offsetTop for every section on every scroll event, which forced a synchronous
-  // layout each time. Only the document height is measured, and only on resize.
-  useEffect(() => {
-    const sections = ['hero', ...LINKS.map(([, id]) => id)]
-      .map((id) => document.getElementById(id))
-      .filter(Boolean);
-    if (sections.length === 0) return undefined;
-
-    const visible = new Map();
-    const observer = new IntersectionObserver(
-      (entries) => {
-        entries.forEach((entry) => visible.set(entry.target.id, entry.intersectionRatio));
-        let best = null;
-        let bestRatio = 0;
-        visible.forEach((ratio, id) => {
-          if (ratio > bestRatio) {
-            bestRatio = ratio;
-            best = id;
-          }
-        });
-        if (best) setActive(best);
-      },
-      { threshold: [0, .1, .25, .5, .75, 1], rootMargin: '-15% 0px -55% 0px' },
-    );
-    sections.forEach((node) => observer.observe(node));
-    return () => observer.disconnect();
-  }, []);
+  const [active, setActive] = useState('');
+  const menuRef = useRef(null);
+  const toggleRef = useRef(null);
+  const navRef = useRef(null);
+  const [indicator, setIndicator] = useState({ left: 0, width: 0 });
+  const isHome = pathname === '/';
+  const links = [
+    { label: 'Work', href: '/#projects', id: 'projects', current: pathname.startsWith('/work/') },
+    { label: 'About', href: '/about', id: 'about', current: pathname === '/about' },
+    { label: 'Writing', href: '/writing', id: 'notes', current: pathname.startsWith('/writing') },
+    { label: 'Contact', href: '/#contact', id: 'contact', current: false },
+  ];
 
   useEffect(() => {
-    let available = Math.max(0, document.documentElement.scrollHeight - window.innerHeight);
-    let frame = 0;
-
-    const read = () => {
-      frame = 0;
-      setCompact(window.scrollY > 36);
-      setProgress(available > 0 ? Math.min(100, (window.scrollY / available) * 100) : 0);
-    };
-    const onScroll = () => {
-      if (frame) return;
-      frame = window.requestAnimationFrame(read);
-    };
-    const onResize = () => {
-      available = Math.max(0, document.documentElement.scrollHeight - window.innerHeight);
-      onScroll();
-    };
-
-    read();
-    window.addEventListener('scroll', onScroll, { passive: true });
-    window.addEventListener('resize', onResize);
-    return () => {
-      if (frame) window.cancelAnimationFrame(frame);
-      window.removeEventListener('scroll', onScroll);
-      window.removeEventListener('resize', onResize);
-    };
-  }, []);
-
-  const goTo = (id) => {
     setOpen(false);
-    const target = document.getElementById(id);
-    if (!target) return;
-    if (lenis) lenis.scrollTo(target);
-    else target.scrollIntoView();
-  };
+    const onScroll = () => {
+      setCompact(window.scrollY > 36);
+      if (!isHome) return;
+      setActive(['hero', 'projects', 'about', 'notes', 'contact'].filter(id => document.getElementById(id)?.getBoundingClientRect().top <= 160).at(-1) || 'hero');
+    };
+    onScroll();
+    window.addEventListener('scroll', onScroll, { passive: true });
+    return () => window.removeEventListener('scroll', onScroll);
+  }, [pathname, isHome]);
+
+  useEffect(() => {
+    if (!open) return undefined;
+    const onKeyDown = (event) => {
+      if (event.key === 'Escape') {
+        setOpen(false);
+        toggleRef.current?.focus();
+      }
+    };
+    const onPointerDown = (event) => {
+      if (!menuRef.current?.contains(event.target) && !toggleRef.current?.contains(event.target)) setOpen(false);
+    };
+    const desktop = window.matchMedia('(min-width: 861px)');
+    const onDesktop = () => { if (desktop.matches) setOpen(false); };
+    window.addEventListener('keydown', onKeyDown);
+    window.addEventListener('pointerdown', onPointerDown);
+    desktop.addEventListener('change', onDesktop);
+    return () => {
+      window.removeEventListener('keydown', onKeyDown);
+      window.removeEventListener('pointerdown', onPointerDown);
+      desktop.removeEventListener('change', onDesktop);
+    };
+  }, [open]);
+
+  useEffect(() => {
+    const update = () => {
+      const nav = navRef.current;
+      const link = nav?.querySelector('.is-active');
+      setIndicator(link ? { left: link.offsetLeft, width: link.offsetWidth } : { left: 0, width: 0 });
+    };
+    update();
+    const observer = new ResizeObserver(update);
+    observer.observe(navRef.current);
+    return () => observer.disconnect();
+  }, [active, pathname]);
+
+  const renderLinks = () => links.map(link => {
+    const current = isHome ? active === link.id : link.current;
+    return <Link key={link.id} href={link.href} className={current ? 'is-active' : undefined} aria-current={current ? (isHome ? 'location' : 'page') : undefined} onClick={() => setOpen(false)}>{link.label}</Link>;
+  });
 
   return (
-    <>
-      <motion.header className={`site-header${compact ? ' is-compact' : ''}`} initial={{ opacity: 0, y: -16 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: .65 }}>
-      <button className="brand" type="button" onClick={() => (lenis ? lenis.scrollTo(0) : window.scrollTo(0, 0))}>
-        <strong>Pranav Arora</strong><span>Applied AI Scientist</span>
-      </button>
-
-      <nav className="desktop-nav" aria-label="Primary navigation">
-        {LINKS.map(([label, id]) => (
-          <button className={active === id ? 'is-active' : ''} key={id} type="button" onClick={() => goTo(id)}>
-            {label}
-          </button>
-        ))}
-      </nav>
-
+    <header className={'site-header' + (compact || !isHome ? ' is-compact' : '')}>
+      <Link className="brand" href="/" onClick={() => setOpen(false)}><strong>Pranav Arora</strong><span>Applied AI Scientist</span></Link>
+      <nav ref={navRef} className="desktop-nav" aria-label="Primary navigation">{renderLinks()}<span className="nav-active-line" style={{ width: indicator.width, transform: `translateX(${indicator.left}px)`, opacity: indicator.width ? 1 : 0 }} aria-hidden="true" /></nav>
       <a className="nav-resume" href="/Pranav_Arora.pdf" target="_blank" rel="noreferrer">Résumé ↗</a>
-      <button className="menu-toggle" type="button" onClick={() => setOpen((value) => !value)} aria-expanded={open} aria-label="Toggle navigation"><span /><span /></button>
-      <span className="site-progress" aria-hidden="true" style={{ transform: `scaleX(${progress / 100})` }} />
-
-      <AnimatePresence>
-        {open && (
-          <motion.nav className="mobile-nav" initial={{ opacity: 0, y: -8 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -8 }} aria-label="Mobile navigation">
-            {LINKS.map(([label, id]) => <button className={active === id ? 'is-active' : ''} key={id} type="button" onClick={() => goTo(id)}>{label}</button>)}
-            <a href="/Pranav_Arora.pdf" target="_blank" rel="noreferrer">Résumé ↗</a>
-          </motion.nav>
-        )}
-      </AnimatePresence>
-      </motion.header>
-
-      <nav className="chapter-rail" aria-label="Page chapters">
-        <span className="chapter-rail-label">Index</span>
-        {CHAPTERS.map(([label, id], index) => (
-          <button
-            type="button"
-            className={active === id ? 'is-active' : ''}
-            key={id}
-            onClick={() => goTo(id)}
-            aria-current={active === id ? 'location' : undefined}
-            aria-label={'Go to ' + label}
-          >
-            <span>{String(index).padStart(2, '0')}</span>
-            <i />
-            <strong>{label}</strong>
-          </button>
-        ))}
-      </nav>
-    </>
+      <button ref={toggleRef} className="menu-toggle" type="button" onClick={() => setOpen(value => !value)} aria-expanded={open} aria-controls="mobile-navigation" aria-label={open ? 'Close navigation' : 'Open navigation'}><span /><span /></button>
+      {open && <nav ref={menuRef} id="mobile-navigation" className="mobile-nav" aria-label="Mobile navigation" onBlur={event => { if (!event.currentTarget.contains(event.relatedTarget) && event.relatedTarget !== toggleRef.current) setOpen(false); }}>{renderLinks()}<a href="/Pranav_Arora.pdf" target="_blank" rel="noreferrer" onClick={() => setOpen(false)}>Résumé (PDF) ↗</a></nav>}
+    </header>
   );
 }

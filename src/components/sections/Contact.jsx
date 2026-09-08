@@ -2,28 +2,47 @@
 
 import { useState } from 'react';
 import { FaGithub, FaLinkedin } from 'react-icons/fa';
-import { useLenis } from 'lenis/react';
 import { SOCIAL } from '@/data/portfolio';
 
 const ICONS = { github: FaGithub, linkedin: FaLinkedin };
 const EMAIL = SOCIAL.find((item) => item.icon === 'mail').href.replace('mailto:', '');
 
 export default function Contact() {
-  const lenis = useLenis();
   const [form, setForm] = useState({ name: '', email: '', message: '' });
   const [state, setState] = useState('idle');
-  const update = (key) => (event) => setForm((current) => ({ ...current, [key]: event.target.value }));
+  const [error, setError] = useState('');
+  const [copyState, setCopyState] = useState('');
+  const update = (key) => (event) => {
+    setForm((current) => ({ ...current, [key]: event.target.value }));
+    if (state !== 'sending') setState('idle');
+  };
+  const copyEmail = async () => {
+    try {
+      await navigator.clipboard.writeText(EMAIL);
+      setCopyState('Email copied');
+    } catch {
+      setCopyState('Select the email address to copy it, or open the email link.');
+    }
+  };
 
   const submit = async (event) => {
     event.preventDefault();
     setState('sending');
+    const controller = new AbortController();
+    const timeout = window.setTimeout(() => controller.abort(), 15000);
     try {
-      const response = await fetch('/api/sendEmail', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(form) });
-      if (!response.ok) throw new Error('Unable to send');
+      const response = await fetch('/api/sendEmail', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(form), signal: controller.signal });
+      if (!response.ok) {
+        const message = response.status === 429 ? 'Too many messages. Please try again later or use the email link.' : response.status === 400 ? 'Please check your name, email, and message, then try again.' : 'Your message could not be sent. Please try again or use the email link.';
+        throw new Error(message);
+      }
       setState('sent');
       setForm({ name: '', email: '', message: '' });
-    } catch {
+    } catch (err) {
+      setError(err.name === 'AbortError' ? 'Sending took too long. Your message is still here; please try again or email directly.' : err.message === 'Failed to fetch' ? 'Connection failed. Your message is still here; please try again or email directly.' : err.message);
       setState('error');
+    } finally {
+      window.clearTimeout(timeout);
     }
   };
 
@@ -32,9 +51,11 @@ export default function Contact() {
       <div className="page-shell contact-grid">
         <div className="contact-copy">
           <p className="section-label">Contact</p>
-          <h2>Have something worth thinking through?</h2>
-          <p>I&apos;m always open to a thoughtful conversation about applied AI, reliable systems or difficult engineering problems.</p>
+          <h2>Let&apos;s talk applied AI.</h2>
+          <p>Have a research question, an engineering challenge, or a collaboration in mind? Tell me a little about it.</p>
           <a className="contact-email" href={`mailto:${EMAIL}`}>{EMAIL} ↗</a>
+          <button className="copy-email" type="button" onClick={copyEmail}>Copy email</button>
+          <p className="copy-status" role="status">{copyState}</p>
           <div className="social-links">
             {SOCIAL.filter((item) => ICONS[item.icon]).map((item) => {
               const Icon = ICONS[item.icon];
@@ -47,13 +68,13 @@ export default function Contact() {
           </div>
         </div>
 
-        <form className="contact-form" onSubmit={submit}>
-          <label><span>Name</span><input required name="name" autoComplete="name" value={form.name} onChange={update('name')} placeholder="Your name" /></label>
-          <label><span>Email</span><input required type="email" name="email" autoComplete="email" spellCheck={false} value={form.email} onChange={update('email')} placeholder="you@company.com" /></label>
-          <label><span>Message</span><textarea required rows={5} name="message" value={form.message} onChange={update('message')} placeholder="What are you working on?" /></label>
+        <form className="contact-form" onSubmit={submit} aria-busy={state === 'sending'}>
+          <label><span>Name</span><input required maxLength={120} disabled={state === 'sending'} name="name" autoComplete="name" value={form.name} onChange={update('name')} placeholder="Your name" /></label>
+          <label><span>Email</span><input required maxLength={254} disabled={state === 'sending'} type="email" name="email" autoComplete="email" spellCheck={false} value={form.email} onChange={update('email')} placeholder="you@company.com" /></label>
+          <label><span>Message</span><textarea required maxLength={5000} disabled={state === 'sending'} rows={5} name="message" value={form.message} onChange={update('message')} placeholder="What are you working on?" /></label>
           <button className="submit-button" type="submit" disabled={state === 'sending'}>{state === 'sending' ? 'Sending…' : 'Send message'} <span>↗</span></button>
           {state === 'sent' && <p className="form-state success" role="status">Thanks, I&apos;ll get back to you soon.</p>}
-          {state === 'error' && <p className="form-state error" role="alert">That did not send. Please use the email link instead.</p>}
+          {state === 'error' && <p className="form-state error" role="alert">{error}</p>}
         </form>
       </div>
       <footer>
@@ -61,11 +82,6 @@ export default function Contact() {
         <span>Applied AI Scientist · Abu Dhabi</span>
         <a
           href="#hero"
-          onClick={(event) => {
-            if (!lenis) return;
-            event.preventDefault();
-            lenis.scrollTo(0);
-          }}
         >
           Back to top ↑
         </a>

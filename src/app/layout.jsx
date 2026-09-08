@@ -1,7 +1,11 @@
 import { Inter } from 'next/font/google';
 import SmoothScroll from '@/components/ui/SmoothScroll';
+import StoryFieldMount from '@/components/visuals/StoryFieldMount';
 import '@/styles/globals.css';
 import '@/styles/motion.css';
+import '@/styles/pages.css';
+import '@/styles/network.css';
+import '@/styles/journey.css';
 
 // Single typeface across every UI context, the way the reference system works:
 // hierarchy comes from scale and tracking, not from weight.
@@ -15,7 +19,7 @@ const inter = Inter({
 const SITE_URL = 'https://pranavarora.vercel.app';
 const TITLE = 'Pranav Arora | Applied AI Scientist';
 const DESCRIPTION =
-  'Applied AI Scientist at Inception, a G42 company, researching, evaluating and deploying agentic AI systems from Abu Dhabi.';
+  'Applied AI Scientist at Inception42, a G42 company, researching, evaluating and deploying agentic AI systems from Abu Dhabi.';
 
 export const metadata = {
   metadataBase: new URL(SITE_URL),
@@ -49,7 +53,7 @@ const PERSON_SCHEMA = {
   name: 'Pranav Arora',
   jobTitle: 'Applied AI Scientist',
   url: SITE_URL,
-  worksFor: { '@type': 'Organization', name: 'Inception, a G42 company' },
+  worksFor: { '@type': 'Organization', name: 'Inception42, a G42 company' },
   address: { '@type': 'PostalAddress', addressLocality: 'Abu Dhabi', addressCountry: 'AE' },
   sameAs: ['https://github.com/Pranav63', 'https://www.linkedin.com/in/pranavarora63/'],
 };
@@ -63,6 +67,7 @@ export default function RootLayout({ children }) {
           dangerouslySetInnerHTML={{ __html: JSON.stringify(PERSON_SCHEMA) }}
         />
         <a className="skip-link" href="#main">Skip to content</a>
+        <StoryFieldMount />
         <SmoothScroll>{children}</SmoothScroll>
       </body>
     </html>

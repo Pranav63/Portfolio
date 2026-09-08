@@ -2,764 +2,184 @@
 
 import { useEffect, useMemo, useRef } from 'react';
 import { Canvas, useFrame, useThree } from '@react-three/fiber';
-import { EffectComposer, Bloom } from '@react-three/postprocessing';
 import * as THREE from 'three';
+import { NEURAL_NETWORK, randomSequence } from '@/data/network';
 
-const COUNT = 3200;
-const SHAPE_COUNT = 6;
-const LINE_COUNT = 180;
-const PROJECT_CENTRES = [[-1.72, .92], [1.72, .92], [0, -1.48]];
-const SPECTRUM = ['#8052ff', '#ffb829', '#ffffff', '#2aa58c'].map((color) => new THREE.Color(color));
-const SPECTRUM_WEIGHTS = [0.4, 0.22, 0.28, 0.1];
+const vertexShader = `
+  uniform float uTime, uBurst, uDpr, uDrift, uTravel;
+  attribute float aSeed, aSize;
+  attribute vec3 aColor;
+  varying vec3 vColor;
+  varying float vSeed;
+  vec3 disperse(vec3 p, float seed) {
+    float burst = pow(uBurst, 1.25);
+    vec3 direction = normalize(p + vec3(sin(seed * 63.0), cos(seed * 41.0), sin(seed * 29.0)) * .7);
+    p *= 1.0 + sin(uTime * .55 + p.y * 1.8) * .015 * (1.0 - uBurst);
+    p += direction * burst * (5.0 + seed * 14.0);
+    float twist = burst * (seed - .5) * 1.6;
+    p.xy = mat2(cos(twist), -sin(twist), sin(twist), cos(twist)) * p.xy;
+    return p;
+  }
+  void main() {
+    vColor = aColor;
+    vSeed = aSeed;
+    vec3 p = disperse(position, aSeed);
+    if (uDrift > .0) {
+      p.x += sin(uTime * .08 + aSeed * 6.28) * .35;
+      p.y = mod(p.y + uTime * .045 + uTravel * .3 + 12.0, 24.0) - 12.0;
+    }
+    vec4 mv = modelViewMatrix * vec4(p, 1.0);
+    gl_Position = projectionMatrix * mv;
+    gl_PointSize = clamp(aSize * uDpr * 30.0 * (1.0 + uBurst * 1.8 + uDrift * .65) / max(2.0, -mv.z), 1.0, 38.0);
+  }
+`;
 
-function seededRandom(seed) {
-  let value = seed >>> 0;
-  return () => {
-    value = (value * 1664525 + 1013904223) >>> 0;
-    return value / 4294967296;
+const particleShader = `
+  uniform float uTime, uBurst, uOpacity;
+  varying vec3 vColor;
+  varying float vSeed;
+  void main() {
+    vec2 uv = gl_PointCoord - .5;
+    float radius = length(uv);
+    if (radius > .5) discard;
+    float core = exp(-radius * radius * 95.0);
+    float halo = exp(-radius * radius * 14.0) * .24;
+    float rays = (exp(-abs(uv.x) * 100.0) + exp(-abs(uv.y) * 100.0)) * pow(1.0 - radius * 2.0, 3.0) * .3;
+    float pulse = .8 + .2 * sin(uTime * 1.3 + vSeed * 70.0);
+    gl_FragColor = vec4(vColor * (1.8 + uBurst), (core + halo + rays) * pulse * uOpacity);
+  }
+`;
+
+const lineShader = `
+  uniform float uTime, uBurst, uOpacity;
+  varying vec3 vColor;
+  varying float vSeed;
+  void main() {
+    float signal = pow(.5 + .5 * sin(vSeed * 28.0 - uTime * 1.8), 12.0);
+    gl_FragColor = vec4(vColor * (1.0 + signal), (.12 + signal * .48) * pow(1.0 - uBurst, 4.0) * uOpacity);
+  }
+`;
+
+const shardVertex = `
+  uniform float uBurst, uTime;
+  attribute vec3 aCenter, aColor;
+  attribute float aSeed;
+  varying vec3 vColor;
+  void main() {
+    vColor = aColor;
+    float burst = pow(uBurst, 1.25);
+    vec3 p = position - aCenter;
+    float angle = uTime * .1 + burst * (4.0 + aSeed * 12.0);
+    p.xy = mat2(cos(angle), -sin(angle), sin(angle), cos(angle)) * p.xy;
+    p *= .2 + sin(uBurst * 3.14159) * .8;
+    p += aCenter + normalize(aCenter) * burst * (6.0 + aSeed * 12.0);
+    p.z = min(p.z, 4.0);
+    gl_Position = projectionMatrix * modelViewMatrix * vec4(p, 1.0);
+  }
+`;
+
+const shardFragment = `
+  uniform float uBurst, uOpacity;
+  varying vec3 vColor;
+  void main() { gl_FragColor = vec4(vColor * 1.5, sin(uBurst * 3.14159) * .4 * uOpacity); }
+`;
+
+function buildGeometry(compact) {
+  const random = randomSequence(119);
+  const { nodes, edges } = NEURAL_NETWORK;
+  const palette = ['#ad85ff', '#6f83ff', '#82d8f7', '#f1d9ff', '#ffc58d'].map(color => new THREE.Color(color));
+  const make = () => ({ position: [], aSeed: [], aSize: [], aColor: [] });
+  const dust = make(), threads = make(), stars = make(), streaks = make();
+  const shards = { position: [], aCenter: [], aSeed: [], aColor: [] };
+  const add = (data, point, seed, size, color) => {
+    data.position.push(...point); data.aSeed.push(seed); data.aSize.push(size); data.aColor.push(...color);
   };
-}
-
-function makeSampler() {
-  const canvas = document.createElement('canvas');
-  canvas.width = canvas.height = 8;
-  return canvas.getContext('2d');
-}
-
-function setPoint(points, index, x, y, z = 0) {
-  const offset = index * 3;
-  points[offset] = x;
-  points[offset + 1] = y;
-  points[offset + 2] = z;
-}
-
-function pointOnPolyline(vertices, progress, closed = false) {
-  const segments = closed ? vertices.length : vertices.length - 1;
-  const scaled = Math.min(segments - 0.000001, Math.max(0, progress * segments));
-  const segment = Math.floor(scaled);
-  const local = scaled - segment;
-  const a = vertices[segment];
-  const b = vertices[(segment + 1) % vertices.length];
-  return [a[0] + (b[0] - a[0]) * local, a[1] + (b[1] - a[1]) * local];
-}
-
-function fillPath(ctx, path, scale, depth, random, interiorKeep = 0.28) {
-  const points = new Float32Array(COUNT * 3);
-  const probe = 0.032;
-  let index = 0;
-  let tries = 0;
-  while (index < COUNT && tries++ < COUNT * 500) {
-    const x = random() * 2 - 1;
-    const y = random() * 2 - 1;
-    if (!ctx.isPointInPath(path, x, y)) continue;
-    const edge = !ctx.isPointInPath(path, x + probe, y) || !ctx.isPointInPath(path, x - probe, y)
-      || !ctx.isPointInPath(path, x, y + probe) || !ctx.isPointInPath(path, x, y - probe);
-    if (!edge && random() > interiorKeep) continue;
-    setPoint(points, index++, x * scale, -y * scale, (random() - 0.5) * scale * depth * (edge ? 0.35 : 1));
-  }
-  return points;
-}
-
-const BRAIN_OUTLINE = [
-  [-0.12, -0.94], [-0.32, -0.99], [-0.47, -0.91], [-0.66, -0.9],
-  [-0.78, -0.77], [-0.91, -0.69], [-0.93, -0.52], [-1, -0.38],
-  [-0.94, -0.22], [-1, -0.05], [-0.91, 0.08], [-0.94, 0.25],
-  [-0.82, 0.39], [-0.68, 0.43], [-0.58, 0.55], [-0.4, 0.51],
-  [-0.28, 0.62], [-0.13, 0.57], [-0.02, 0.7], [0.02, 0.98],
-  [0.17, 0.98], [0.19, 0.7], [0.29, 0.57], [0.43, 0.54],
-  [0.54, 0.45], [0.7, 0.42], [0.77, 0.3], [0.9, 0.22],
-  [0.9, 0.06], [0.98, -0.07], [0.91, -0.23], [0.96, -0.39],
-  [0.84, -0.51], [0.78, -0.67], [0.62, -0.73], [0.49, -0.86],
-  [0.31, -0.85], [0.17, -0.96],
-];
-
-const BRAIN_FISSURES = [
-  [[-0.76, -0.61], [-0.53, -0.72], [-0.29, -0.6], [-0.06, -0.69], [0.16, -0.6]],
-  [[-0.82, -0.39], [-0.61, -0.47], [-0.4, -0.35], [-0.17, -0.46], [0.04, -0.35]],
-  [[-0.82, -0.13], [-0.59, -0.04], [-0.37, -0.17], [-0.13, -0.05], [0.13, -0.15], [0.39, -0.04], [0.7, -0.12]],
-  [[-0.78, 0.16], [-0.55, 0.08], [-0.33, 0.21], [-0.1, 0.1], [0.11, 0.2]],
-  [[-0.64, 0.37], [-0.46, 0.29], [-0.28, 0.43], [-0.12, 0.34]],
-  [[-0.43, -0.84], [-0.32, -0.65], [-0.38, -0.45], [-0.25, -0.25], [-0.32, -0.06]],
-  [[-0.09, -0.87], [0.03, -0.67], [-0.04, -0.48], [0.1, -0.29], [0.04, -0.09]],
-  [[0.27, -0.78], [0.38, -0.6], [0.31, -0.42], [0.47, -0.25], [0.39, -0.05]],
-  [[0.57, -0.68], [0.68, -0.51], [0.57, -0.34], [0.73, -0.19]],
-  [[0.24, 0.08], [0.39, 0.22], [0.57, 0.14], [0.75, 0.24]],
-  [[0.12, 0.37], [0.26, 0.28], [0.4, 0.4], [0.56, 0.32]],
-  [[-0.04, 0.48], [0.08, 0.39], [0.18, 0.53]],
-];
-
-function brainPath() {
-  const path = new Path2D();
-  path.moveTo(...BRAIN_OUTLINE[0]);
-  BRAIN_OUTLINE.slice(1).forEach((point) => path.lineTo(...point));
-  path.closePath();
-  return path;
-}
-
-function buildBrain(ctx) {
-  const random = seededRandom(11);
-  const path = brainPath();
-  const points = new Float32Array(COUNT * 3);
-  const scale = 2.92;
-  const perimeterEnd = 1240;
-  const fissureEnd = 2460;
-
-  // The reference works because its outer shell is almost unbroken. Preserve
-  // that silhouette first, including the narrow stem at the bottom.
-  for (let i = 0; i < perimeterEnd; i++) {
-    const t = i / perimeterEnd;
-    const [x, y] = pointOnPolyline(BRAIN_OUTLINE, t, true);
-    const depth = Math.sin(t * Math.PI * 8) * 0.035 + (random() - 0.5) * 0.11;
-    setPoint(points, i, x * scale, -y * scale, depth);
-  }
-
-  // Organic Catmull-Rom fissures form recognizable lobes. They are deliberately
-  // non-parallel: repeated horizontal bands made the earlier version look topographic.
-  const pointsPerFissure = Math.ceil((fissureEnd - perimeterEnd) / BRAIN_FISSURES.length);
-  const fissureCurves = BRAIN_FISSURES.map((fissure) => new THREE.CatmullRomCurve3(
-    fissure.map(([x, y]) => new THREE.Vector3(x, y, 0)),
-    false,
-    'centripetal',
-  ));
-  for (let i = perimeterEnd; i < fissureEnd; i++) {
-    const local = i - perimeterEnd;
-    const fissureIndex = local % BRAIN_FISSURES.length;
-    const ordinal = Math.floor(local / BRAIN_FISSURES.length);
-    const point = fissureCurves[fissureIndex].getPoint(Math.min(1, ordinal / Math.max(1, pointsPerFissure - 1)));
-    setPoint(points, i, point.x * scale, -point.y * scale, 0.16 + (random() - 0.5) * 0.1);
-  }
-
-  // A quieter interior gives the eye negative space around the fissures while
-  // retaining enough depth for the form to breathe as the pointer moves.
-  let index = fissureEnd;
-  while (index < COUNT) {
-    const x = random() * 2 - 1;
-    const y = random() * 2 - 1;
-    if (!ctx.isPointInPath(path, x, y)) continue;
-    const normalized = Math.min(1, x * x * 0.7 + y * y * 0.62);
-    const depth = Math.sqrt(1 - normalized) * 0.78;
-    setPoint(points, index++, x * scale, -y * scale, (random() - 0.5) * depth);
-  }
-  return points;
-}
-
-const NODES = [[0, 0, 0.38], [-0.83, 0.56, 0.22], [0.79, 0.62, 0.22], [-0.92, -0.42, 0.2], [0.86, -0.38, 0.22], [0, -0.78, 0.19]];
-const EDGES = [[0, 1], [0, 2], [0, 3], [0, 4], [0, 5], [1, 2], [1, 3], [2, 4], [3, 5], [4, 5]];
-
-function buildDeployment() {
-  const random = seededRandom(23);
-  const points = new Float32Array(COUNT * 3);
-  const scale = 2.75;
-  const nodePoints = 1660;
-  for (let i = 0; i < nodePoints; i++) {
-    const nodeIndex = i % NODES.length;
-    const node = NODES[nodeIndex];
-    const angle = random() * Math.PI * 2;
-    const radius = node[2] * (0.72 + random() * 0.28) * (random() < 0.72 ? 1 : Math.sqrt(random()));
-    setPoint(points, i, (node[0] + Math.cos(angle) * radius) * scale, (node[1] + Math.sin(angle) * radius) * scale, (random() - 0.5) * 0.46 + (nodeIndex === 0 ? 0.18 : 0));
-  }
-  for (let i = nodePoints; i < COUNT; i++) {
-    const edge = EDGES[(i - nodePoints) % EDGES.length];
-    const a = NODES[edge[0]];
-    const b = NODES[edge[1]];
-    const t = random();
-    const bend = Math.sin(t * Math.PI) * 0.055 * ((edge[0] + edge[1]) % 2 ? 1 : -1);
-    setPoint(points, i, (a[0] + (b[0] - a[0]) * t) * scale, (a[1] + (b[1] - a[1]) * t + bend) * scale, (random() - 0.5) * 0.13);
-  }
-  return points;
-}
-
-const geoPolygon = (coordinates) => coordinates.map(([longitude, latitude]) => [(longitude + 180) / 360, (90 - latitude) / 180]);
-const LAND = [
-  geoPolygon([[-168, 72], [-142, 70], [-125, 58], [-130, 49], [-124, 39], [-117, 31], [-105, 24], [-97, 18], [-86, 20], [-82, 29], [-75, 40], [-66, 47], [-55, 53], [-64, 62], [-88, 68], [-112, 73]]),
-  geoPolygon([[-73, 83], [-18, 82], [-20, 61], [-45, 59], [-62, 69]]),
-  geoPolygon([[-81, 12], [-69, 10], [-52, 4], [-35, -8], [-40, -23], [-49, -33], [-54, -52], [-68, -55], [-75, -35], [-80, -10]]),
-  geoPolygon([[-11, 71], [10, 72], [35, 69], [62, 72], [95, 76], [140, 66], [165, 59], [145, 48], [128, 43], [121, 25], [107, 17], [101, 3], [91, 22], [78, 8], [68, 24], [52, 27], [42, 38], [28, 41], [20, 55], [4, 58], [-8, 50]]),
-  geoPolygon([[-17, 36], [5, 37], [22, 33], [39, 16], [51, 11], [44, -13], [32, -34], [18, -35], [9, -18], [-4, 5]]),
-  geoPolygon([[112, -11], [132, -12], [153, -25], [146, -40], [124, -35], [113, -24]]),
-  geoPolygon([[130, 33], [143, 46], [146, 41], [138, 31]]),
-];
-
-function pointInPolygon(x, y, polygon) {
-  let inside = false;
-  for (let i = 0, j = polygon.length - 1; i < polygon.length; j = i++) {
-    const [xi, yi] = polygon[i];
-    const [xj, yj] = polygon[j];
-    if ((yi > y) !== (yj > y) && x < ((xj - xi) * (y - yi)) / (yj - yi) + xi) inside = !inside;
-  }
-  return inside;
-}
-
-function spherePoint(u, v, radius) {
-  const longitude = (u - 0.5) * Math.PI * 2;
-  const latitude = (0.5 - v) * Math.PI;
-  return [Math.cos(longitude) * Math.cos(latitude) * radius, Math.sin(latitude) * radius, Math.sin(longitude) * Math.cos(latitude) * radius];
-}
-
-function travelArcPoint(progress, radius) {
-  const start = spherePoint((103.82 + 180) / 360, (90 - 1.35) / 180, 1);
-  const end = spherePoint((54.37 + 180) / 360, (90 - 24.45) / 180, 1);
-  const dot = Math.min(1, Math.max(-1, start[0] * end[0] + start[1] * end[1] + start[2] * end[2]));
-  const angle = Math.acos(dot);
-  const denominator = Math.sin(angle);
-  const a = Math.sin((1 - progress) * angle) / denominator;
-  const b = Math.sin(progress * angle) / denominator;
-  const lift = radius * (1.035 + Math.sin(progress * Math.PI) * 0.12);
-  return [(start[0] * a + end[0] * b) * lift, (start[1] * a + end[1] * b) * lift, (start[2] * a + end[2] * b) * lift];
-}
-
-function buildGlobe() {
-  const random = seededRandom(37);
-  const points = new Float32Array(COUNT * 3);
-  const radius = 2.72;
-  let index = 0;
-  while (index < 1680) {
-    const u = random();
-    const v = random();
-    if (!LAND.some((polygon) => pointInPolygon(u, v, polygon))) continue;
-    const point = spherePoint(u, v, radius * (0.995 + random() * 0.016));
-    setPoint(points, index++, ...point);
-  }
-
-  // Coastline-weighted points keep Africa, Asia and the Americas crisp instead
-  // of letting them dissolve into a uniformly filled sphere.
-  const coastlineStart = index;
-  const coastlineEnd = 2420;
-  for (; index < coastlineEnd; index++) {
-    const coastlineIndex = index - coastlineStart;
-    const polygonIndex = coastlineIndex % LAND.length;
-    const ordinal = Math.floor(coastlineIndex / LAND.length);
-    const total = Math.ceil((coastlineEnd - coastlineStart) / LAND.length);
-    const [u, v] = pointOnPolyline(LAND[polygonIndex], (ordinal + random() * 0.25) / total, true);
-    setPoint(points, index, ...spherePoint(u, v, radius * 1.012));
-  }
-
-  // Latitude/longitude scaffolding preserves the globe reading during rotation.
-  const gridStart = index;
-  const gridEnd = 2920;
-  for (; index < gridEnd; index++) {
-    const gridIndex = index - gridStart;
-    const latitude = gridIndex % 2 === 0;
-    const u = latitude ? random() : (Math.floor(gridIndex / 2) % 10) / 10 + (random() - 0.5) * 0.005;
-    const v = latitude ? 0.18 + (Math.floor(gridIndex / 2) % 7) * 0.105 + (random() - 0.5) * 0.006 : 0.1 + random() * 0.8;
-    setPoint(points, index, ...spherePoint(u, v, radius));
-  }
-
-  // The raised route is personal rather than decorative: Singapore to Abu Dhabi.
-  for (; index < COUNT; index++) {
-    const t = (index - gridEnd) / Math.max(1, COUNT - gridEnd - 1);
-    const point = travelArcPoint(t, radius);
-    const jitter = (random() - 0.5) * 0.025;
-    setPoint(points, index, point[0] + jitter, point[1] + jitter, point[2] + jitter);
-  }
-  return points;
-}
-
-function bulbOutline() {
-  const right = [];
-  const segments = 24;
-  const ease = (value) => value * value * (3 - 2 * value);
-  for (let i = 0; i <= segments; i++) {
-    const angle = (i / segments) * Math.PI / 2;
-    right.push([Math.sin(angle) * 0.59, -0.96 + (1 - Math.cos(angle)) * 0.78]);
-  }
-  for (let i = 1; i <= segments; i++) {
-    const u = ease(i / segments);
-    right.push([0.59 + (0.21 - 0.59) * u, -0.18 + 0.53 * u]);
-  }
-  right.push([0.29, 0.45], [0.29, 0.67], [0.2, 0.76]);
-  return right.concat(right.slice().reverse().map(([x, y]) => [-x, y]));
-}
-
-function buildBulb(ctx) {
-  const random = seededRandom(41);
-  const outline = bulbOutline();
-  const path = new Path2D();
-  path.moveTo(...outline[0]);
-  outline.slice(1).forEach((point) => path.lineTo(...point));
-  path.closePath();
-  const points = fillPath(ctx, path, 3.05, 0.18, random, 0.07);
-  for (let i = 0; i < 900; i++) {
-    const [x, y] = pointOnPolyline(outline, i / 900, true);
-    setPoint(points, i, x * 3.05, -y * 3.05, (random() - 0.5) * 0.08);
-  }
-
-  // Two lead wires rise from the base into a bright coiled filament.
-  const leftLead = [[-0.22, 0.36], [-0.2, 0.14], [-0.17, -0.05]];
-  const rightLead = [[0.22, 0.36], [0.2, 0.14], [0.17, -0.05]];
-  for (let i = 900; i < 1320; i++) {
-    const lead = i % 2 === 0 ? leftLead : rightLead;
-    const [x, y] = pointOnPolyline(lead, (i - 900) / 420);
-    setPoint(points, i, x * 3.05, -y * 3.05, (random() - 0.5) * 0.1);
-  }
-  for (let i = 1320; i < 1700; i++) {
-    const t = (i - 1320) / 379;
-    const x = -0.18 + t * 0.36;
-    const y = -0.055 + Math.sin(t * Math.PI * 6) * 0.032;
-    setPoint(points, i, x * 3.05, -y * 3.05, (random() - 0.5) * 0.1);
-  }
-
-  // Sloped bands and a closed contact foot make the base read as machined metal.
-  for (let i = 1700; i < 2300; i++) {
-    const thread = (i - 1700) % 6;
-    const t = Math.floor((i - 1700) / 6) / 100;
-    const x = -0.285 + t * 0.57;
-    const y = 0.42 + thread * 0.053 + (t - 0.5) * 0.018;
-    setPoint(points, i, x * 3.05, -y * 3.05, (random() - 0.5) * 0.075);
-  }
-  const foot = [[-0.2, 0.73], [-0.13, 0.79], [0.13, 0.79], [0.2, 0.73]];
-  for (let i = 2300; i < 2520; i++) {
-    const [x, y] = pointOnPolyline(foot, (i - 2300) / 220);
-    setPoint(points, i, x * 3.05, -y * 3.05, (random() - 0.5) * 0.06);
-  }
-
-  // Short, broken rays suggest an active idea without turning into a sun icon.
-  for (let i = 2520; i < 2800; i++) {
-    const ray = (i - 2520) % 7;
-    const t = Math.floor((i - 2520) / 7) / 40;
-    const angle = Math.PI + (ray / 6) * Math.PI;
-    const distance = 0.7 + t * 0.18;
-    const x = Math.cos(angle) * distance;
-    const y = -0.18 + Math.sin(angle) * distance;
-    setPoint(points, i, x * 3.05, -y * 3.05, (random() - 0.5) * 0.07);
-  }
-  return points;
-}
-
-function buildPipelineAtlas() {
-  const random = seededRandom(101);
-  const points = new Float32Array(COUNT * 3);
-  const perStage = COUNT / 4;
-  const vertical = [.34, -.24, .2, -.12];
-  const spread = [.76, .62, .68, .8];
-  for (let i = 0; i < COUNT; i++) {
-    const stage = Math.floor(i / perStage);
-    const local = i % perStage;
-    const angle = random() * Math.PI * 2;
-    const latitude = random() * 2 - 1;
-    const shell = Math.cbrt(random()) * spread[stage] * (local < 100 ? .34 : 1);
-    const radial = Math.sqrt(1 - latitude * latitude) * shell;
-    setPoint(points, i,
-      -2.35 + stage * 1.55 + Math.cos(angle) * radial * .62,
-      vertical[stage] + latitude * shell,
-      Math.sin(angle) * radial);
-  }
-  return points;
-}
-
-function buildProjectAtlas() {
-  const random = seededRandom(113);
-  const points = new Float32Array(COUNT * 3);
-  const perCluster = COUNT / 3;
-  for (let i = 0; i < COUNT; i++) {
-    const cluster = Math.min(2, Math.floor(i / perCluster));
-    const local = i - Math.floor(cluster * perCluster);
-    const angle = local / perCluster * Math.PI * 2;
-    const ring = local % 4;
-    const radius = .34 + ring * .14 + random() * .08;
-    setPoint(points, i,
-      PROJECT_CENTRES[cluster][0] + Math.cos(angle) * radius,
-      PROJECT_CENTRES[cluster][1] + Math.sin(angle) * radius,
-      Math.sin(angle * 2 + cluster) * .38 + (random() - .5) * .14);
-  }
-  return points;
-}
-
-function buildReliabilityAtlas() {
-  const random = seededRandom(127);
-  const points = new Float32Array(COUNT * 3);
-  const perLane = COUNT / 4;
-  for (let i = 0; i < COUNT; i++) {
-    const lane = Math.floor(i / perLane);
-    const local = i % perLane;
-    const progress = local / (perLane - 1);
-    const x = -3 + progress * 6;
-    setPoint(points, i, x, 1.42 - lane * .94 + Math.sin(progress * Math.PI * 8 + lane) * .055,
-      Math.sin(progress * Math.PI * 6 + lane * 1.3) * .28 + (random() - .5) * .08);
-  }
-  return points;
-}
-
-function buildCapabilityAtlas() {
-  const random = seededRandom(139);
-  const points = new Float32Array(COUNT * 3);
-  const perLayer = COUNT / 5;
-  for (let i = 0; i < COUNT; i++) {
-    const layer = Math.floor(i / perLayer);
-    const local = i % perLayer;
-    const angle = local / perLayer * Math.PI * 2 + layer * .16;
-    const radius = .78 + layer * .4 + (random() - .5) * .05;
-    setPoint(points, i, Math.cos(angle) * radius, (layer - 2) * .36 + Math.sin(angle * 2) * .1,
-      Math.sin(angle) * radius * .7);
-  }
-  return points;
-}
-
-function buildStableAtlas() {
-  const random = seededRandom(151);
-  const points = new Float32Array(COUNT * 3);
-  const core = 520;
-  for (let i = 0; i < COUNT; i++) {
-    if (i < core) {
-      const angle = i / core * Math.PI * 2;
-      const radius = .18 + (i % 5) * .045 + random() * .035;
-      setPoint(points, i, Math.cos(angle) * radius, Math.sin(angle) * radius, (random() - .5) * .3);
-      continue;
+  const colorAt = point => palette[point[0] > 1 && point[1] < .5 ? 4 : Math.floor(random() * 4)].toArray();
+  nodes.forEach((point, i) => add(dust, point, i / nodes.length, 3 + random() * 3, colorAt(point)));
+  edges.forEach(([a, b]) => {
+    const color = colorAt(nodes[a]);
+    for (let j = 0; j < 8; j++) {
+      for (const t of [j / 8, (j + 1) / 8]) {
+        const p = nodes[a].map((v, axis) => v * (1 - t) + nodes[b][axis] * t);
+        add(threads, p, a / nodes.length * (1 - t) + b / nodes.length * t, 1, color);
+      }
     }
-    const progress = (i - core) / (COUNT - core);
-    const angle = progress * Math.PI * 5.2;
-    const radius = .68 + progress * 2.2;
-    setPoint(points, i, Math.cos(angle) * radius, Math.sin(angle) * radius * .58,
-      (progress - .5) * 1.25 + (random() - .5) * .08);
-  }
-  return points;
-}
-
-function buildOrbit() {
-  const random = seededRandom(59);
-  const points = new Float32Array(COUNT * 3);
-  for (let i = 0; i < COUNT; i++) {
-    const ring = i % 4;
-    let angle = random() * Math.PI * 2;
-    if (Math.abs(Math.atan2(Math.sin(angle), Math.cos(angle))) < 0.18) angle += 0.32;
-    const radius = (0.58 + ring * 0.13 + (random() - 0.5) * 0.04) * 2.85;
-    setPoint(points, i, Math.cos(angle) * radius, Math.sin(angle) * radius * 0.68, Math.sin(angle * 2 + ring) * 0.34 + (random() - 0.5) * 0.08);
-  }
-  return points;
-}
-
-// Shared screen-space ordering stops particles crossing the entire scene at random.
-function orderShape(points) {
-  const indices = Array.from({ length: COUNT }, (_, index) => index);
-  indices.sort((a, b) => {
-    const aBand = Math.floor((points[a * 3 + 1] + 4) / 0.2);
-    const bBand = Math.floor((points[b * 3 + 1] + 4) / 0.2);
-    if (aBand !== bBand) return aBand - bBand;
-    return aBand % 2 === 0 ? points[a * 3] - points[b * 3] : points[b * 3] - points[a * 3];
   });
-  const ordered = new Float32Array(points.length);
-  indices.forEach((source, target) => {
-    ordered[target * 3] = points[source * 3];
-    ordered[target * 3 + 1] = points[source * 3 + 1];
-    ordered[target * 3 + 2] = points[source * 3 + 2];
-  });
-  return ordered;
-}
-
-function buildBlastField(brain) {
-  const random = seededRandom(83);
-  const offsets = new Float32Array(COUNT * 3);
-  const delays = new Float32Array(COUNT);
-  const drift = new Float32Array(COUNT);
-  for (let i = 0; i < COUNT; i++) {
-    const offset = i * 3;
-    const x = brain[offset];
-    const y = brain[offset + 1];
-    const angle = Math.atan2(y, x) + (random() - 0.5) * 0.72;
-    const reach = 1.7 + random() * 3.9;
-    offsets[offset] = Math.cos(angle) * reach - 1.15 + (random() - 0.5) * 2.2;
-    offsets[offset + 1] = Math.sin(angle) * reach + (random() - 0.5) * 1.8;
-    // Real Z separation lets size attenuation create the large foreground
-    // fragments visible in the reference without a second particle system.
-    offsets[offset + 2] = random() < 0.075 ? 5.7 + random() * 1.35 : (random() - 0.52) * 8;
-    const radius = Math.min(1, Math.hypot(x / 3, y / 3));
-    delays[i] = (1 - radius) * 0.09 + random() * 0.055;
-    drift[i] = 0.55 + random() * 0.9;
+  for (let i = 0; i < (compact ? 2800 : 8500); i++) {
+    const [a, b] = edges[Math.floor(random() * edges.length)];
+    const t = random(), scatter = random() < .8 ? .045 : .4;
+    const p = nodes[a].map((v, axis) => v * (1 - t) + nodes[b][axis] * t + (random() - .5) * scatter);
+    add(dust, p, random(), .45 + random() * 1.8, colorAt(p));
   }
-  return { offsets, delays, drift };
-}
-
-function smoothstep(value) {
-  const x = Math.min(1, Math.max(0, value));
-  return x * x * (3 - 2 * x);
-}
-
-function sectionProgress(scrollY, anchors) {
-  if (anchors.length < SHAPE_COUNT || scrollY <= anchors[0]) return 0;
-  if (scrollY >= anchors[anchors.length - 1]) return 1;
-  for (let i = 0; i < anchors.length - 1; i++) {
-    if (scrollY <= anchors[i + 1]) {
-      const local = (scrollY - anchors[i]) / Math.max(1, anchors[i + 1] - anchors[i]);
-      // Give the opening blast more runway than the later, quieter morphs.
-      const morph = i === 0 ? smoothstep((local - 0.4) / 0.6) : smoothstep((local - 0.64) / 0.36);
-      return (i + morph) / (anchors.length - 1);
+  for (let i = 0; i < 650; i++) add(stars, [(random() - .5) * 38, (random() - .5) * 23, -3 - random() * 16], random(), .4 + random() * 1.2, palette[i % 4].toArray());
+  for (let i = 0; i < 160; i++) {
+    const p = nodes[Math.floor(random() * nodes.length)];
+    const seed = random(), color = colorAt(p);
+    add(streaks, p, seed, 1, color);
+    add(streaks, p.map(v => v * (1.01 + seed * .04)), seed + .025, 1, color);
+    const size = .025 + random() * .09;
+    for (const offset of [[-size * .3, -size * .2, 0], [size * .3, 0, size * .3], [0, size * 2.4, 0]]) {
+      shards.position.push(...p.map((v, axis) => v + offset[axis]));
+      shards.aCenter.push(...p); shards.aSeed.push(seed); shards.aColor.push(...color);
     }
   }
-  return 1;
+  const geometry = data => {
+    const buffer = new THREE.BufferGeometry();
+    Object.entries(data).forEach(([name, values]) => buffer.setAttribute(name, new THREE.Float32BufferAttribute(values, ['aSeed', 'aSize'].includes(name) ? 1 : 3)));
+    return buffer;
+  };
+  return { dust: geometry(dust), threads: geometry(threads), stars: geometry(stars), streaks: geometry(streaks), shards: geometry(shards) };
 }
 
-function interpolateStops(values, progress) {
-  const scaled = Math.min(values.length - 1, Math.max(0, progress * (values.length - 1)));
-  const index = Math.min(values.length - 2, Math.floor(scaled));
-  const local = smoothstep(scaled - index);
-  return values[index] + (values[index + 1] - values[index]) * local;
-}
-
-function buildTriangleTexture() {
-  const canvas = document.createElement('canvas');
-  canvas.width = canvas.height = 64;
-  const ctx = canvas.getContext('2d');
-  ctx.fillStyle = '#ffffff';
-  ctx.beginPath();
-  ctx.moveTo(32, 4);
-  ctx.lineTo(60, 57);
-  ctx.lineTo(4, 57);
-  ctx.closePath();
-  ctx.fill();
-  return new THREE.CanvasTexture(canvas);
-}
-
-function ParticleSwarm({ progress, pointer, projectFocus, scrollVelocity }) {
-  const geometryRef = useRef(null);
-  const lineGeometryRef = useRef(null);
-  const lineMaterialRef = useRef(null);
-  const groupRef = useRef(null);
-  const materialRef = useRef(null);
-  const current = useRef(null);
-  const globeSpin = useRef(0);
-  const scaleTarget = useMemo(() => new THREE.Vector3(1, 1, 1), []);
-  const { viewport } = useThree();
-  const shapes = useMemo(() => [
-    buildPipelineAtlas(),
-    buildProjectAtlas(),
-    buildGlobe(),
-    buildReliabilityAtlas(),
-    buildCapabilityAtlas(),
-    buildStableAtlas(),
-  ].map(orderShape), []);
-  const projectAssignment = useMemo(() => Array.from({ length: COUNT }, (_, particle) => {
-    const offset = particle * 3;
-    let closest = 0;
-    let distance = Infinity;
-    PROJECT_CENTRES.forEach(([x, y], cluster) => {
-      const next = Math.hypot(shapes[1][offset] - x, shapes[1][offset + 1] - y);
-      if (next < distance) { closest = cluster; distance = next; }
-    });
-    return closest;
-  }), [shapes]);
-  const blast = useMemo(() => buildBlastField(shapes[0]), [shapes]);
-  const texture = useMemo(buildTriangleTexture, []);
-  const linePositions = useMemo(() => new Float32Array(LINE_COUNT * 6), []);
-  const { colors, scatter } = useMemo(() => {
-    const random = seededRandom(71);
-    const colorArray = new Float32Array(COUNT * 3);
-    const scatterArray = new Float32Array(COUNT * 2);
-    const cumulative = [];
-    SPECTRUM_WEIGHTS.reduce((sum, weight, index) => (cumulative[index] = sum + weight), 0);
-    for (let i = 0; i < COUNT; i++) {
-      const choice = random();
-      let pick = cumulative.findIndex((value) => choice <= value);
-      if (pick < 0) pick = SPECTRUM.length - 1;
-      const gain = random() < 0.12 ? 1.45 : 0.45 + random() * 0.5;
-      colorArray[i * 3] = SPECTRUM[pick].r * gain;
-      colorArray[i * 3 + 1] = SPECTRUM[pick].g * gain;
-      colorArray[i * 3 + 2] = SPECTRUM[pick].b * gain;
-      scatterArray[i * 2] = (random() - 0.5) * 1.8;
-      scatterArray[i * 2 + 1] = 0.6 + random() * 0.9;
-    }
-    return { colors: colorArray, scatter: scatterArray };
-  }, []);
-  if (!current.current) current.current = new Float32Array(shapes[0]);
-
-  useFrame((state, delta) => {
-    if (!geometryRef.current) return;
-    const p = Math.min(1, Math.max(0, progress.current));
-    const scaled = p * (shapes.length - 1);
-    const index = Math.min(shapes.length - 2, Math.floor(scaled));
-    const morph = smoothstep(scaled - index);
-    const from = shapes[index];
-    const to = shapes[index + 1];
-    const positions = geometryRef.current.attributes.position.array;
-    const buffer = current.current;
-    const time = state.clock.elapsedTime;
-    const mx = pointer.current.x * viewport.width * 0.5;
-    const my = pointer.current.y * viewport.height * 0.5;
-    const storyStage = p * (SHAPE_COUNT - 1);
-    const projectWeight = smoothstep(1 - Math.min(1, Math.abs(storyStage - 1) / .78));
-    for (let i = 0; i < COUNT; i++) {
-      const offset = i * 3;
-      for (let axis = 0; axis < 3; axis++) {
-        let target;
-        if (index === 0) {
-          const delayed = Math.min(1, Math.max(0, (morph - blast.delays[i]) / Math.max(0.001, 1 - blast.delays[i])));
-          const release = smoothstep(delayed / 0.3);
-          const returnHome = smoothstep((delayed - 0.62) / 0.38);
-          const suspended = release * (1 - returnHome);
-          const assemble = smoothstep((delayed - 0.55) / 0.45);
-          const velocityLift = 1 + Math.min(2.4, Math.abs(scrollVelocity.current)) * 0.13;
-          target = from[offset + axis] + (to[offset + axis] - from[offset + axis]) * assemble
-            + blast.offsets[offset + axis] * suspended * velocityLift;
-          if (axis === 1) target -= scrollVelocity.current * blast.drift[i] * suspended * 0.22;
-        } else {
-          target = from[offset + axis] + (to[offset + axis] - from[offset + axis]) * morph;
-        }
-        if (projectWeight > .001) {
-          const cluster = projectAssignment[i];
-          const selected = cluster === projectFocus.current;
-          if (selected && axis < 2) {
-            const centre = PROJECT_CENTRES[cluster][axis];
-            target = centre + (target - centre) * (1 + projectWeight * .13);
-          }
-          if (axis === 2) target += projectWeight * (selected ? .58 : -.12);
-        }
-        buffer[offset + axis] += (target - buffer[offset + axis]) * Math.min(1, delta * 7.5);
-      }
-      let x = buffer[offset];
-      let y = buffer[offset + 1] + Math.sin(time * 0.82 + i * 0.37) * 0.025;
-      const z = buffer[offset + 2];
-      if (pointer.current.active) {
-        const dx = x - mx;
-        const dy = y - my;
-        const distance = Math.hypot(dx, dy);
-        if (distance < 2.15 && distance > 0.0001) {
-          const pull = 1 - distance / 2.15;
-          const force = pull * pull * 1.25 * scatter[i * 2 + 1];
-          const angle = Math.atan2(dy, dx) + scatter[i * 2] * pull;
-          x += Math.cos(angle) * force;
-          y += Math.sin(angle) * force;
-        }
-      }
-      positions[offset] = x;
-      positions[offset + 1] = y;
-      positions[offset + 2] = z;
-    }
-    geometryRef.current.attributes.position.needsUpdate = true;
-    if (lineGeometryRef.current) {
-      for (let line = 0; line < LINE_COUNT; line++) {
-        const a = line * 17 % COUNT;
-        const b = (a + 53 + line % 5 * 71) % COUNT;
-        const target = line * 6;
-        linePositions[target] = positions[a * 3];
-        linePositions[target + 1] = positions[a * 3 + 1];
-        linePositions[target + 2] = positions[a * 3 + 2];
-        linePositions[target + 3] = positions[b * 3];
-        linePositions[target + 4] = positions[b * 3 + 1];
-        linePositions[target + 5] = positions[b * 3 + 2];
-      }
-      lineGeometryRef.current.attributes.position.needsUpdate = true;
-    }
-    if (lineMaterialRef.current) lineMaterialRef.current.opacity = .08 + projectWeight * .08;
-
-    if (groupRef.current) {
-      const stage = storyStage;
-      const openingTransition = stage < 1 ? Math.sin(stage * Math.PI) : 0;
-      const globeWeight = smoothstep(1 - Math.abs(stage - 2) / 0.72);
-      globeSpin.current += delta * globeWeight * 0.28;
-      const compact = viewport.width < 8;
-      const xStops = compact ? [.42, .34, .34, .31, .26, 0] : [2.68, 2.02, 1.95, 1.84, 1.7, .5];
-      const targetX = interpolateStops(xStops, p) - openingTransition * (compact ? .28 : 1.12) + pointer.current.x * (compact ? .08 : .2);
-      const targetYRotation = interpolateStops([.13, 0, 0, .02, .08, .12], p) + globeSpin.current * globeWeight + pointer.current.x * .035;
-      const targetXRotation = interpolateStops([-.04, .03, .02, 0, .08, .17], p) + pointer.current.y * .025;
-      const targetScale = compact ? .7 : interpolateStops([.9, 1, 1, 1, 1, .95], p);
-      groupRef.current.position.x += (targetX - groupRef.current.position.x) * Math.min(1, delta * 5);
-      groupRef.current.position.y += (-scrollVelocity.current * openingTransition * 0.09 - groupRef.current.position.y) * Math.min(1, delta * 4);
-      groupRef.current.rotation.y += (targetYRotation - groupRef.current.rotation.y) * Math.min(1, delta * 4.5);
-      groupRef.current.rotation.x += (targetXRotation - groupRef.current.rotation.x) * Math.min(1, delta * 4.5);
-      groupRef.current.rotation.z += (-scrollVelocity.current * openingTransition * 0.012 - groupRef.current.rotation.z) * Math.min(1, delta * 4);
-      scaleTarget.setScalar(targetScale);
-      groupRef.current.scale.lerp(scaleTarget, Math.min(1, delta * 5));
-      if (materialRef.current) {
-        materialRef.current.size = 0.085 + openingTransition * (compact ? 0.018 : 0.042);
-        materialRef.current.opacity = 0.92 + openingTransition * 0.08;
-      }
-    }
-    scrollVelocity.current *= Math.exp(-delta * 4.2);
-  });
-
-  return (
-    <group ref={groupRef}>
-      <lineSegments>
-        <bufferGeometry ref={lineGeometryRef}>
-          <bufferAttribute attach="attributes-position" count={LINE_COUNT * 2} array={linePositions} itemSize={3} />
-        </bufferGeometry>
-        <lineBasicMaterial ref={lineMaterialRef} color="#8f83bc" transparent opacity={.09} depthWrite={false} />
-      </lineSegments>
-      <points>
-        <bufferGeometry ref={geometryRef}>
-          <bufferAttribute attach="attributes-position" count={COUNT} array={current.current} itemSize={3} />
-          <bufferAttribute attach="attributes-color" count={COUNT} array={colors} itemSize={3} />
-        </bufferGeometry>
-        <pointsMaterial ref={materialRef} size={0.085} map={texture} vertexColors transparent alphaTest={0.4} depthWrite={false} sizeAttenuation opacity={0.92} />
-      </points>
-    </group>
-  );
-}
-
-export default function StoryField() {
-  // Mount gating (reduced motion + device capability) is owned by StoryFieldMount.
-  const progress = useRef(0);
-  const pointer = useRef({ x: 0, y: 0, active: false });
-  const projectFocus = useRef(0);
-  const scrollVelocity = useRef(0);
-  const lastScroll = useRef({ y: 0, time: 0 });
-  const shellRef = useRef(null);
-  const anchors = useRef([0, 1, 2, 3, 4, 5]);
-  const heroEnd = useRef(0.12);
-  const docHeight = useRef(1);
+function NeuralField({ progress, ambient, travel, compact, onReady, onContextLost }) {
+  const group = useRef();
+  const { gl, viewport } = useThree();
+  const pointer = useRef({ x: 0, y: 0 });
+  const geometry = useMemo(() => buildGeometry(compact), [compact]);
+  const uniforms = useMemo(() => ({ uTime: { value: 0 }, uBurst: { value: progress.current }, uDpr: { value: 1 }, uOpacity: { value: 1 }, uDrift: { value: 0 }, uTravel: { value: 0 } }), [progress]);
+  const starUniforms = useMemo(() => ({ ...uniforms, uBurst: { value: 0 }, uOpacity: { value: .8 }, uDrift: { value: 1 } }), [uniforms]);
+  const ambience = useRef(ambient.current);
 
   useEffect(() => {
-    const measure = () => {
-      anchors.current = ['#hero', '#projects', '#about', '#experience', '#skills', '#contact'].map((selector) => {
-        const node = document.querySelector(selector);
-        return node ? Math.max(0, node.offsetTop - window.innerHeight * 0.42) : 0;
-      });
-      const documentHeight = Math.max(1, document.documentElement.scrollHeight - window.innerHeight);
-      docHeight.current = documentHeight;
-      const hero = document.getElementById('hero');
-      heroEnd.current = hero ? Math.min(0.3, hero.offsetHeight / documentHeight) : 0.12;
-    };
-    const onScroll = () => {
-      const now = performance.now();
-      const elapsed = Math.max(16, now - lastScroll.current.time);
-      const rawVelocity = (window.scrollY - lastScroll.current.y) / elapsed;
-      scrollVelocity.current = Math.min(2.8, Math.max(-2.8, scrollVelocity.current * 0.55 + rawVelocity * 0.7));
-      lastScroll.current = { y: window.scrollY, time: now };
-      progress.current = sectionProgress(window.scrollY, anchors.current);
-      if (shellRef.current) {
-        const scrollFraction = Math.min(1, Math.max(0, window.scrollY / docHeight.current));
-        const fade = 1 - Math.min(1, scrollFraction / Math.max(0.0001, heroEnd.current)) * 0.28;
-        shellRef.current.style.opacity = fade.toFixed(3);
-      }
-    };
-    const onPointerMove = (event) => {
-      pointer.current.x = event.clientX / window.innerWidth * 2 - 1;
-      pointer.current.y = -(event.clientY / window.innerHeight * 2 - 1);
-      pointer.current.active = true;
-    };
-    const onPointerLeave = () => { pointer.current.active = false; };
-    const onProjectChange = (event) => {
-      const next = Number(event.detail?.index);
-      if (Number.isInteger(next)) projectFocus.current = Math.min(2, Math.max(0, next));
-    };
-    const onResize = () => { measure(); onScroll(); };
-    const resizeObserver = new ResizeObserver(onResize);
-    resizeObserver.observe(document.body);
-    measure();
-    lastScroll.current = { y: window.scrollY, time: performance.now() };
-    onScroll();
-    window.addEventListener('resize', onResize);
-    window.addEventListener('scroll', onScroll, { passive: true });
-    window.addEventListener('pointermove', onPointerMove, { passive: true });
-    window.addEventListener('pointerleave', onPointerLeave);
-    window.addEventListener('portfolio:project-change', onProjectChange);
-    return () => {
-      resizeObserver.disconnect();
-      window.removeEventListener('resize', onResize);
-      window.removeEventListener('scroll', onScroll);
-      window.removeEventListener('pointermove', onPointerMove);
-      window.removeEventListener('pointerleave', onPointerLeave);
-      window.removeEventListener('portfolio:project-change', onProjectChange);
-    };
-  }, []);
+    onReady();
+    const lost = event => { event.preventDefault(); onContextLost(); };
+    const move = event => { pointer.current = { x: event.clientX / innerWidth - .5, y: event.clientY / innerHeight - .5 }; };
+    gl.domElement.addEventListener('webglcontextlost', lost);
+    window.addEventListener('pointermove', move, { passive: true });
+    return () => { gl.domElement.removeEventListener('webglcontextlost', lost); window.removeEventListener('pointermove', move); };
+  }, [gl, onReady, onContextLost]);
+  useEffect(() => () => Object.values(geometry).forEach(value => value.dispose()), [geometry]);
 
-  return (
-    <div className="story-field" ref={shellRef} aria-hidden="true">
-      <Canvas dpr={[1, 1.5]} camera={{ position: [0, 0, 9], fov: 42 }} gl={{ alpha: true, antialias: true, powerPreference: 'high-performance' }}>
-        <ParticleSwarm progress={progress} pointer={pointer} projectFocus={projectFocus} scrollVelocity={scrollVelocity} />
-        <EffectComposer multisampling={0}>
-          <Bloom mipmapBlur luminanceThreshold={.46} luminanceSmoothing={.4} intensity={.86} radius={.68} />
-        </EffectComposer>
-      </Canvas>
-    </div>
-  );
+  useFrame((_, delta) => {
+    const dt = Math.min(delta, .05);
+    uniforms.uTime.value += dt;
+    uniforms.uBurst.value = THREE.MathUtils.damp(uniforms.uBurst.value, progress.current, 7, dt);
+    uniforms.uTravel.value = THREE.MathUtils.damp(uniforms.uTravel.value, travel.current, 3, dt);
+    ambience.current = THREE.MathUtils.damp(ambience.current, ambient.current, 5, dt);
+    const burst = uniforms.uBurst.value;
+    uniforms.uDpr.value = gl.getPixelRatio();
+    uniforms.uOpacity.value = THREE.MathUtils.lerp(1 - THREE.MathUtils.smoothstep(burst, .75, 1), .2, ambience.current);
+    group.current.position.set(viewport.width * (compact ? .22 : .255) * (1 - burst * .65), compact ? .65 : .15, 0);
+    group.current.scale.setScalar(compact ? .78 : 1.12);
+    group.current.rotation.y = THREE.MathUtils.damp(group.current.rotation.y, -.18 + Math.sin(uniforms.uTime.value * .12) * .1 + pointer.current.x * .16 + burst * .6, 3, dt);
+    group.current.rotation.x = THREE.MathUtils.damp(group.current.rotation.x, .1 + pointer.current.y * .12, 3, dt);
+    group.current.rotation.z = -.08 + burst * .3;
+  });
+
+  const material = { vertexShader, uniforms, transparent: true, depthWrite: false, blending: THREE.AdditiveBlending };
+  return <>
+    <points geometry={geometry.stars} frustumCulled={false}><shaderMaterial {...material} uniforms={starUniforms} fragmentShader={particleShader} /></points>
+    <group ref={group}>
+      <lineSegments geometry={geometry.threads} frustumCulled={false}><shaderMaterial {...material} fragmentShader={lineShader} /></lineSegments>
+      <points geometry={geometry.dust} frustumCulled={false}><shaderMaterial {...material} fragmentShader={particleShader} /></points>
+      <lineSegments geometry={geometry.streaks} frustumCulled={false}><shaderMaterial {...material} fragmentShader={'uniform float uBurst, uOpacity; varying vec3 vColor; void main() { gl_FragColor = vec4(vColor, sin(uBurst * 3.14159) * .6 * uOpacity); }'} /></lineSegments>
+      <mesh geometry={geometry.shards} frustumCulled={false}><shaderMaterial {...material} vertexShader={shardVertex} fragmentShader={shardFragment} side={THREE.DoubleSide} /></mesh>
+    </group>
+  </>;
+}
+
+export default function StoryField(props) {
+  return <Canvas aria-hidden="true" dpr={[1, props.compact ? 1 : 1.5]} camera={{ position: [0, 0, 11], fov: 48, near: .1, far: 70 }} frameloop={props.visible ? 'always' : 'never'} gl={{ alpha: true, antialias: false, powerPreference: 'high-performance' }}>
+    <NeuralField {...props} />
+  </Canvas>;
 }

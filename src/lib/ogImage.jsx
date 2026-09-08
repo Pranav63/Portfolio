@@ -5,7 +5,7 @@ export const OG_CONTENT_TYPE = 'image/png';
 
 // The share card is the same system as the site: one void, one violet ring,
 // one saffron mark. Hierarchy comes from scale, never from weight.
-export function renderOgImage() {
+export function renderOgImage({ title = 'Pranav Arora', subtitle = 'Applied AI, held to a production standard.', eyebrow = 'Applied AI Scientist · Inception42, a G42 company' } = {}) {
   return new ImageResponse(
     (
       <div
@@ -49,16 +49,16 @@ export function renderOgImage() {
         <div style={{ display: 'flex', alignItems: 'center', gap: 16 }}>
           <div style={{ width: 12, height: 12, borderRadius: '50%', background: '#FFB829', display: 'flex' }} />
           <div style={{ color: '#FFB829', fontSize: 24, letterSpacing: 3, textTransform: 'uppercase' }}>
-            Applied AI Scientist · Inception, a G42 company
+            {eyebrow}
           </div>
         </div>
 
         <div style={{ display: 'flex', flexDirection: 'column', gap: 28 }}>
-          <div style={{ color: '#FFFFFF', fontSize: 86, letterSpacing: -3, lineHeight: 1.05, display: 'flex' }}>
-            Pranav Arora
+          <div style={{ color: '#FFFFFF', fontSize: title.length > 25 ? 58 : 86, letterSpacing: -2, lineHeight: 1.1, display: 'flex' }}>
+            {title}
           </div>
           <div style={{ color: '#BDBDBD', fontSize: 38, letterSpacing: -1, lineHeight: 1.25, maxWidth: 780, display: 'flex' }}>
-            Applied AI, held to a production standard.
+            {subtitle}
           </div>
         </div>
 
