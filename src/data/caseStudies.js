@@ -59,7 +59,7 @@ export const CASE_STUDIES = {
     contribution: 'Personal project: hybrid retrieval, reranking, answer generation, evaluation logging, and dashboard integration.',
     stack: ['Hybrid search', 'Reranking', 'LLM-as-judge', 'Evaluation dashboard'],
     resultsLabel: 'Reported evaluation',
-    metricNote: 'Repository-reported results across 10 queries using an LLM judge on a 1–5 scale. This small sample is exploratory; raw per-query results and a larger human-reviewed set are still needed for independent validation.',
+    metricNote: 'Repository-reported results across 10 queries using an LLM judge on a 1-5 scale. This small sample is exploratory; raw per-query results and a larger human-reviewed set are still needed for independent validation.',
     flow: ['Question', 'Search 73 papers', 'Rerank evidence', 'Answer + evaluation'],
     flowNotes: ['A research question starts the retrieval workflow.', 'Keyword and semantic search collect candidate passages from the paper corpus.', 'A second model reranks 20 candidates to select three passages.', 'The answer is shown with sources; latency and judge scores support review.'],
     next: 'Commit the raw 10-query results, document the judge rubric and model settings alongside them, connect RAGAS to the main dashboard path, and expand to a human-reviewed test set. Treat the reported latency as run-specific, not a service guarantee.',

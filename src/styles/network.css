@@ -15,20 +15,12 @@
 .cinematic-field[data-context="ambient"] .still-brain { display: none; }
 .hero-scroll-cue { display: inline-flex; align-items: center; gap: 22px; }
 .hero-scroll-cue > span { font-size: 1.2rem; color: #d8c8ed; }
-.case-cover { display: block; position: relative; margin: 0 0 48px; border-radius: 16px; overflow: hidden; background: #111117; border: 1px solid rgba(255,255,255,.15); }
-.case-cover img { display: block; width: 100%; height: auto; max-height: 440px; object-fit: contain; }
-.case-cover-caption { position: absolute; right: 12px; bottom: 12px; display: flex; align-items: center; min-height: 44px; padding: 8px 14px; background: #141219; color: #e6dfef; border: 1px solid #51465f; border-radius: 8px; font-size: .75rem; }
-.work-card-image, .case-cover { contain: layout; }
 
 @view-transition { navigation: auto; }
 ::view-transition-group(*) { animation-duration: .48s; animation-timing-function: cubic-bezier(.22,1,.36,1); }
 ::view-transition-old(root), ::view-transition-new(root) { animation-duration: .16s; }
 ::view-transition-old(project-trading-agent), ::view-transition-old(project-rag-eval), ::view-transition-old(project-qlora) { height: 100%; object-fit: contain; }
 ::view-transition-new(project-trading-agent), ::view-transition-new(project-rag-eval), ::view-transition-new(project-qlora) { height: 100%; object-fit: contain; }
-.work-card { transition: transform .22s ease; }
-.work-card:hover { transform: translateY(-4px); }
-.work-card-action > span { transition: transform .2s ease; }
-.work-card:hover .work-card-action > span { transform: translate(3px,-3px); }
 .comparison-grid.is-updating { animation: comparison-update .25s ease-out; }
 .desktop-nav { position: relative; }
 .desktop-nav a { border-bottom-color: transparent !important; }
@@ -47,14 +39,11 @@
   .field-scrim { background: linear-gradient(90deg,rgba(10,10,12,.95),rgba(10,10,12,.82) 65%,rgba(10,10,12,.6)),linear-gradient(0deg,#0a0a0c,transparent 55%,rgba(10,10,12,.25)); }
   .cinematic-field[data-context="ambient"] .field-scrim { background: rgba(10,10,12,.72); }
   .field-fallback { width: 170%; left: -70%; }
-  .case-cover { margin-bottom: 30px; }
-  .case-cover-caption { position: static; border: 0; border-top: 1px solid #38303f; border-radius: 0; justify-content: flex-end; }
 }
 @media (prefers-reduced-motion: reduce) {
   @view-transition { navigation: none; }
   ::view-transition-group(*), ::view-transition-old(*), ::view-transition-new(*) { animation: none !important; }
   .comparison-grid.is-updating { animation: none; }
   .flow-description p { animation: none; }
-  .work-card:hover { transform: none; }
   .hero-scroll-cue { display: none; }
 }

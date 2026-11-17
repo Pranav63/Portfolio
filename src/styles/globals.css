@@ -15,6 +15,7 @@
   --deep-verdant: #23a085;
 
   /* Type */
+  --font-mono-stack: var(--font-mono), ui-monospace, SFMono-Regular, Menlo, monospace;
   --font-sans-stack: var(--font-sans), ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
 
   --text-caption: .75rem;
@@ -275,22 +276,10 @@ h1, h2, h3, h4 { font-weight: var(--w-regular); text-wrap: balance; }
 }
 .case-main > p:not(.case-label) { max-width: 52ch; color: var(--silver-mist); font-size: var(--text-body); font-weight: var(--w-light); line-height: 1.5; }
 
-.source-link {
-  display: inline-flex;
-  gap: var(--space-12);
-  align-items: center;
-  margin-top: var(--space-30);
-  color: var(--bone-white);
-  font-size: var(--text-nav-label);
-  text-decoration: none;
-  transition: color .25s ease;
-}
-.source-link:hover { color: var(--saffron-spark); }
-.source-links { display: flex; flex-wrap: wrap; column-gap: var(--space-36); }
 
 .case-results > div { display: grid; grid-template-columns: repeat(3, 1fr); gap: var(--space-36); }
 .case-results article strong { display: block; margin-bottom: var(--space-12); font-size: var(--text-subheading); font-weight: var(--w-regular); letter-spacing: -.03em; }
-.case-results article span { color: var(--ash-gray); font-size: var(--text-caption); letter-spacing: .025em; text-transform: uppercase; }
+.case-results article > span { color: var(--ash-gray); font-size: var(--text-caption); letter-spacing: .025em; text-transform: uppercase; }
 .evidence-note { margin-top: var(--space-30); color: var(--ash-gray); font-size: var(--text-nav-label); font-weight: var(--w-light); line-height: 1.5; }
 
 .project-flow { display: grid; grid-template-columns: repeat(4, 1fr); gap: var(--space-36); }
@@ -317,7 +306,6 @@ h1, h2, h3, h4 { font-weight: var(--w-regular); text-wrap: balance; }
 .proof-caption { display: block; padding-top: var(--space-18); color: var(--ash-gray); font-size: var(--text-nav-label); font-weight: var(--w-light); }
 .proof-caption span { display: none; }
 
-.source-proof p:last-child { max-width: 60ch; color: var(--silver-mist); font-size: var(--text-body); font-weight: var(--w-light); line-height: 1.5; }
 
 .case-decisions { display: grid; grid-template-columns: 1fr; gap: var(--space-36); }
 .case-decisions > div:last-child { display: grid; grid-template-columns: repeat(3, 1fr); gap: var(--space-36); }
