@@ -3,7 +3,7 @@
 import { useEffect, useRef, useState } from 'react';
 import Image from 'next/image';
 import { AnimatePresence, motion, useReducedMotion } from 'framer-motion';
-import { FaGithub } from 'react-icons/fa';
+import Stat from '@/components/ui/Stat';
 import QloraComparison from '@/components/sections/QloraComparison';
 
 export default function ProjectCaseStudy({ project, detail }) {
@@ -77,15 +77,11 @@ export default function ProjectCaseStudy({ project, detail }) {
               <p className="case-label">What I built</p>
               <h2>The approach</h2>
               <p>{project.description}</p>
-              <div className="source-links">
-                <a className="source-link" href={project.github} target="_blank" rel="noreferrer"><FaGithub /> Read the source <span>↗</span></a>
-                {project.live && <a className="source-link" href={project.live} target="_blank" rel="noreferrer">Try the live demo <span>↗</span></a>}
-              </div>
             </div>
 
             <div className="case-results">
               <h2 className="case-label">{detail.resultsLabel}</h2>
-              <div>{project.caseStudy.evidence.map((item) => <article key={item.label}><strong>{item.value}</strong><span>{item.label}</span></article>)}</div>
+              <div>{project.caseStudy.evidence.map((item) => <article key={item.label}><strong><Stat value={item.value} /></strong><span>{item.label}</span></article>)}</div>
               <p className="evidence-note">{detail.metricNote}</p>
             </div>
 
@@ -99,11 +95,11 @@ export default function ProjectCaseStudy({ project, detail }) {
 
             {project.id === 'qlora' && <QloraComparison />}
 
-            {project.proofs?.length > 0 ? (
+            {project.proofs.length > 1 && (
               <div className="project-proofs">
-                <div className="proof-heading"><h2 className="case-label">Inside the project</h2><p>Saved screenshots from the repository. Select an image to inspect it in detail.</p></div>
+                <div className="proof-heading"><h2 className="case-label">More from the project</h2><p>Select an image to inspect it at full size.</p></div>
                 <div className="proof-grid">
-                  {project.proofs.map((proof) => (
+                  {project.proofs.slice(1).map((proof) => (
                     <motion.button
                       type="button"
                       onClick={(event) => openProof(proof, event.currentTarget)}
@@ -121,8 +117,6 @@ export default function ProjectCaseStudy({ project, detail }) {
                   ))}
                 </div>
               </div>
-            ) : (
-              <div className="source-proof"><p className="case-label">Current proof</p><p>The source contains the complete news pipeline, model classifier, indicator checks, risk guard, paper-broker integration and dashboard. It does not yet contain a backtest or a claim of profitable performance.</p></div>
             )}
 
             <div className="case-decisions">

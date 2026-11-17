@@ -4,6 +4,10 @@ import { notFound } from 'next/navigation';
 import Navigation from '@/components/ui/Navigation';
 import PageFooter from '@/components/ui/PageFooter';
 import ProjectCaseStudy from '@/components/sections/ProjectCaseStudy';
+import BlurText from '@/components/reactbits/BlurText';
+import SpotlightCard from '@/components/reactbits/SpotlightCard';
+import CoverReveal from '@/components/ui/CoverReveal';
+import { FaGithub } from 'react-icons/fa';
 import { PROJECTS } from '@/data/portfolio';
 import { CASE_STUDIES } from '@/data/caseStudies';
 
@@ -32,16 +36,26 @@ export default async function WorkPage({ params }) {
       <Navigation />
       <main id="main" className="inner-page page-shell">
         <a className="back-link" href="/#projects">← All selected work</a>
-        <header className="page-heading">
+        <header className="page-heading case-heading">
           <p className="section-label">{detail.category} / Case study</p>
-          <h1>{project.title}</h1>
+          <BlurText as="h1" text={project.title} animateBy="words" delay={90} stepDuration={0.4} trigger="load" />
           <p className="page-lead">{project.subtitle}</p>
-          <span className="status-badge">{detail.status} · 2026</span>
+          <div className="case-heading-actions">
+            <span className="status-badge">{detail.status} · 2026</span>
+            <a className="case-action" href={project.github} target="_blank" rel="noreferrer"><FaGithub aria-hidden="true" /> Source <span aria-hidden="true">↗</span></a>
+            {project.live && <a className="case-action case-action--primary" href={project.live} target="_blank" rel="noreferrer">Live demo <span aria-hidden="true">↗</span></a>}
+          </div>
         </header>
-        <a className="case-cover" href={cover.src} target="_blank" rel="noreferrer" style={{ viewTransitionName: 'project-' + project.id }} aria-label={'Open full-size image: ' + cover.alt}><Image src={cover.src} alt={cover.alt} width={cover.width} height={cover.height} sizes="(max-width: 860px) 94vw, 1100px" priority /><span className="case-cover-caption">Inspect screenshot ↗</span></a>
+        <CoverReveal proof={cover} label={new URL(project.live ?? project.github).host} transitionName={'project-' + project.id} />
         <div className="case-context"><div><h2>The problem</h2><p>{detail.problem}</p></div><div><h2>My contribution</h2><p>{detail.contribution}</p><ul className="stack-tags" aria-label="Tools and methods">{detail.stack.map(tool => <li key={tool}>{tool}</li>)}</ul></div></div>
         <ProjectCaseStudy project={project} detail={detail} />
-        <nav className="next-project" aria-label="More projects"><span>Continue exploring</span><Link href={'/work/' + next.id}>{next.title} <span aria-hidden="true">→</span></Link></nav>
+        <nav className="next-project" aria-label="More projects">
+          <span>Next case study</span>
+          <SpotlightCard className="next-project-card" spotlightColor="#8a5cff" intensity={0.22} spotlightSize={420} borderGlow={0.8}>
+            <div><p className="work-meta"><span>{CASE_STUDIES[next.id].category}</span></p><Link className="work-link" href={'/work/' + next.id}>{next.title}</Link><p className="work-lead">{next.subtitle}</p></div>
+            <figure className="work-frame"><Image src={next.proofs[0].src} alt="" width={next.proofs[0].width} height={next.proofs[0].height} sizes="(max-width: 860px) 90vw, 420px" /></figure>
+          </SpotlightCard>
+        </nav>
       </main>
       <PageFooter />
     </>

@@ -10,8 +10,7 @@ main { position: relative; z-index: 1; }
 .proof-media > span { display: none; }
 
 /* Arrow and link nudges. */
-.source-link span, .submit-button span, .primary-link span { transition: transform .3s cubic-bezier(.22, 1, .36, 1); }
-.source-link:hover span { transform: translate(3px, -3px); }
+.submit-button span, .primary-link span { transition: transform .3s cubic-bezier(.22, 1, .36, 1); }
 .submit-button:hover span { transform: translate(3px, -3px); }
 .primary-link:hover span { transform: translateY(3px); }
 

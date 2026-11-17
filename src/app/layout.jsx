@@ -1,4 +1,4 @@
-import { Inter } from 'next/font/google';
+import { Geist, Geist_Mono } from 'next/font/google';
 import SmoothScroll from '@/components/ui/SmoothScroll';
 import StoryFieldMount from '@/components/visuals/StoryFieldMount';
 import '@/styles/globals.css';
@@ -6,15 +6,11 @@ import '@/styles/motion.css';
 import '@/styles/pages.css';
 import '@/styles/network.css';
 import '@/styles/journey.css';
+import '@/styles/showcase.css';
 
-// Single typeface across every UI context, the way the reference system works:
-// hierarchy comes from scale and tracking, not from weight.
-const inter = Inter({
-  subsets: ['latin'],
-  weight: ['300', '400', '500', '600'],
-  variable: '--font-sans',
-  display: 'swap',
-});
+// Geist for everything readable; its mono sibling only for figures and code-like labels.
+const geist = Geist({ subsets: ['latin'], variable: '--font-sans', display: 'swap' });
+const geistMono = Geist_Mono({ subsets: ['latin'], variable: '--font-mono', display: 'swap' });
 
 const SITE_URL = 'https://pranavarora.vercel.app';
 const TITLE = 'Pranav Arora | Applied AI Scientist';
@@ -60,7 +56,7 @@ const PERSON_SCHEMA = {
 
 export default function RootLayout({ children }) {
   return (
-    <html lang="en" className={inter.variable}>
+    <html lang="en" className={`${geist.variable} ${geistMono.variable}`}>
       <body>
         <script
           type="application/ld+json"

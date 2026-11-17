@@ -5,7 +5,7 @@ export default function FieldNotes() {
   return (
     <section id="notes" className="notes-section" aria-labelledby="notes-title">
       <div className="page-shell">
-        <header className="notes-head"><p className="section-label">Field notes</p><h2 id="notes-title">What the experiments taught me.</h2></header>
+        <header className="notes-head"><h2 id="notes-title">What the experiments taught me.</h2></header>
         <div className="writing-grid">
           {ARTICLES.map(article => (
             <Link className="note-card" href={'/writing/' + article.slug} key={article.slug}>
