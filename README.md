@@ -25,12 +25,12 @@ To run this project locally, follow these steps:
 
 1. Clone the repository:
    ```
-   git clone https://github.com/[YourUsername]/portfolio-website.git
+   git clone https://github.com/Pranav63/Portfolio.git
    ```
 
 2. Navigate to the project directory:
    ```
-   cd portfolio-website
+   cd Portfolio
    ```
 
 3. Install dependencies:

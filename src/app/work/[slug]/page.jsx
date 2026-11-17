@@ -10,16 +10,18 @@ import { CASE_STUDIES } from '@/data/caseStudies';
 export const dynamicParams = false;
 export function generateStaticParams() { return PROJECTS.map(project => ({ slug: project.id })); }
 
-export function generateMetadata({ params }) {
-  const project = PROJECTS.find(item => item.id === params.slug);
+export async function generateMetadata({ params }) {
+  const { slug } = await params;
+  const project = PROJECTS.find(item => item.id === slug);
   if (!project) return {};
   const title = project.title + ' | Pranav Arora';
   const url = '/work/' + project.id;
   return { title, description: project.description, alternates: { canonical: url }, openGraph: { title, description: project.description, type: 'article', url, images: [{ url: project.proofs[0].src, alt: project.proofs[0].alt }] }, twitter: { card: 'summary_large_image', title, description: project.description, images: [project.proofs[0].src] } };
 }
 
-export default function WorkPage({ params }) {
-  const index = PROJECTS.findIndex(item => item.id === params.slug);
+export default async function WorkPage({ params }) {
+  const { slug } = await params;
+  const index = PROJECTS.findIndex(item => item.id === slug);
   if (index < 0) notFound();
   const project = PROJECTS[index];
   const detail = CASE_STUDIES[project.id];
