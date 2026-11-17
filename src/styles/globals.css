@@ -286,6 +286,7 @@ h1, h2, h3, h4 { font-weight: var(--w-regular); text-wrap: balance; }
   transition: color .25s ease;
 }
 .source-link:hover { color: var(--saffron-spark); }
+.source-links { display: flex; flex-wrap: wrap; column-gap: var(--space-36); }
 
 .case-results > div { display: grid; grid-template-columns: repeat(3, 1fr); gap: var(--space-36); }
 .case-results article strong { display: block; margin-bottom: var(--space-12); font-size: var(--text-subheading); font-weight: var(--w-regular); letter-spacing: -.03em; }

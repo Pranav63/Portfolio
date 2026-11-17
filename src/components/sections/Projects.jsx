@@ -7,9 +7,9 @@ export default function Projects() {
     <section id="projects" className="projects-section">
       <div className="page-shell">
         <header className="projects-head">
-          <p className="section-label">Selected work / 01 to 03</p>
+          <p className="section-label">Selected work / 01 to 0{PROJECTS.length}</p>
           <h2>Built. Measured. Explained.</h2>
-          <p>Three applied AI projects, with working interfaces, evaluation results, and engineering tradeoffs.</p>
+          <p>Applied AI projects with working interfaces, evaluation results, and engineering tradeoffs.</p>
         </header>
         <div className="work-grid">
           {PROJECTS.map((project, index) => {

@@ -77,7 +77,10 @@ export default function ProjectCaseStudy({ project, detail }) {
               <p className="case-label">What I built</p>
               <h2>The approach</h2>
               <p>{project.description}</p>
-              <a className="source-link" href={project.github} target="_blank" rel="noreferrer"><FaGithub /> Read the source <span>↗</span></a>
+              <div className="source-links">
+                <a className="source-link" href={project.github} target="_blank" rel="noreferrer"><FaGithub /> Read the source <span>↗</span></a>
+                {project.live && <a className="source-link" href={project.live} target="_blank" rel="noreferrer">Try the live demo <span>↗</span></a>}
+              </div>
             </div>
 
             <div className="case-results">

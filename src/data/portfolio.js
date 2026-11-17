@@ -1,5 +1,83 @@
 export const PROJECTS = [
   {
+    id: 'ishara',
+    title: 'Ishara: Interpreter Dispatch Agent',
+    subtitle: 'Books a sign language interpreter from a forwarded appointment message, in English or Arabic',
+    description:
+      'A Deaf resident pastes an appointment SMS or email. The agent reads it, asks the resident to confirm the details, offers the slot to qualified interpreters in waves, keeps a backup ready, and finds a replacement automatically if the interpreter cancels.',
+    metrics: ['English + Arabic Messages', 'Human Approval First', 'Live Demo'],
+    caseStudy: {
+      evidence: [
+        { value: '2', label: 'interface languages, with right-to-left Arabic' },
+        { value: '0', label: 'offers sent before the resident approves' },
+        { value: '63', label: 'API regression tests' },
+      ],
+      decisions: [
+        { title: 'Rules first, model second', rationale: 'A rules parser reads English and Arabic messages on its own. A hosted model only refines it, and any model failure falls back to the rules reading.' },
+        { title: 'The resident approves before anyone is contacted', rationale: 'Parsed details are shown for correction, and fields the agent guessed are marked. No interpreter sees the request until the resident confirms.' },
+        { title: 'Plan for cancellations', rationale: 'Each outcome updates an interpreter reliability score used by the next match, and a cancellation triggers an automatic replacement.' },
+      ],
+    },
+    highlights: ['Arabic and English appointment messages, with identifiers redacted before parsing'],
+    proofs: [
+      { src: '/project-proofs/ishara-review.png', width: 1600, height: 1000, alt: 'Ishara review page showing an Arabic hospital appointment message parsed into location, area, date, visit type and sign language fields, with a Confirm request button', caption: 'An Arabic message read into reviewable details' },
+      { src: '/project-proofs/ishara-status.png', width: 1600, height: 1000, alt: 'Ishara request status page showing the interpreter search in progress, the appointment details and a timeline of what the agent has done', caption: 'Matching in progress, with the agent timeline' },
+    ],
+    github: 'https://github.com/Pranav63/Ishara',
+    live: 'https://ishara-tan.vercel.app',
+  },
+  {
+    id: 'memory-lab',
+    title: 'Research Memory Lab',
+    subtitle: 'A research workspace that keeps cited evidence, reviewed findings and their history',
+    description:
+      'Import papers and notes, ask questions over them with citations, turn sources into study material, record a human verdict on each claim, and keep versioned findings in a graph memory. An experiment bench compares answers with no context, source retrieval, and retrieval plus memory.',
+    metrics: ['Hybrid Retrieval', 'Graph Memory', '3-condition Experiments'],
+    caseStudy: {
+      evidence: [
+        { value: '3', label: 'context conditions compared per question' },
+        { value: '6 × 600', label: 'snippet budget, same for both retrieval conditions' },
+        { value: 'Local or hosted', label: 'generation, same evidence' },
+      ],
+      decisions: [
+        { title: 'Combine keyword and meaning search', rationale: 'SQLite FTS5 and local embeddings are ranked separately and merged with reciprocal rank fusion.' },
+        { title: 'A person decides what is remembered', rationale: 'Only a claim whose latest human verdict is "supported" can become a finding, and revised findings keep their earlier versions.' },
+        { title: 'Make the comparison fair', rationale: 'Both retrieval conditions get the same snippet budget, and exports keep context, prompt and model hashes so a run can be inspected later.' },
+      ],
+    },
+    highlights: ['Citations are checked against the passages actually given to the model'],
+    proofs: [
+      { src: '/project-proofs/memory-lab-experiments.png', width: 1440, height: 1034, alt: 'Research Memory Lab experiments page comparing no context, source retrieval, and sources plus memory for one research question', caption: 'Experiment bench: three kinds of context' },
+      { src: '/project-proofs/memory-lab-studio.png', width: 1440, height: 1099, alt: 'Research Memory Lab studio page for turning selected sources into a cited research report', caption: 'Studio: cited outputs from chosen sources' },
+    ],
+    github: 'https://github.com/Pranav63/memory-lab',
+  },
+  {
+    id: 'mizan',
+    title: 'Mizan: Arabic-English Policy Benchmark',
+    subtitle: 'Tests whether a policy clause keeps its meaning across English, Arabic and mixed text',
+    description:
+      'A benchmark that classifies policy clauses as obligations, prohibitions, permissions, definitions or procedures, in English, Modern Standard Arabic and mixed-language versions of the same clause. It compares a local 4B model scored by direct option logits with a hosted GPT baseline.',
+    metrics: ['60 / 60 Both Models', '307ms vs 1,207ms Median', '$0.04 Full GPT Run'],
+    caseStudy: {
+      evidence: [
+        { value: '60 / 60', label: 'correct for both models on the starter set' },
+        { value: '307ms', label: 'local median latency (GPT: 1,207ms)' },
+        { value: '$0.04', label: 'estimated GPT cost for all 60 clauses' },
+      ],
+      decisions: [
+        { title: 'Test meaning, not translation', rationale: 'Each clause comes as an English, Arabic and mixed triplet, so the benchmark can check that all three receive the same label.' },
+        { title: 'Score the local model without generation', rationale: 'The local model picks a label from option logits with zero generated tokens, so there is no free text to parse.' },
+        { title: 'Cap spend before a run starts', rationale: 'A conservative cost estimate is checked against a per-run ceiling before any hosted call is made.' },
+      ],
+    },
+    highlights: ['Both models scored 100% on a synthetic starter set: the next step is a harder, reviewed one'],
+    proofs: [
+      { src: '/project-proofs/mizan-live-run.png', width: 1440, height: 1100, alt: 'Mizan overview showing a live benchmark run with per-language accuracy for the local model and GPT, agreement across languages and median response time', caption: 'A live run: per-language accuracy for both models' },
+    ],
+    github: 'https://github.com/Pranav63/mizan',
+  },
+  {
     id: 'trading-agent',
     title: 'Risk-Controlled AI Trading Agent',
     subtitle: 'Turns financial news into paper-trading decisions with human approval',
